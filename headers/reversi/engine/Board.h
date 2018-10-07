@@ -9,10 +9,12 @@
 namespace Reversi {
 
   enum class CellState {
-    Empty,
-    White,
-    Black
+    Empty = 0,
+    White = 1,
+    Black = -1
   };
+
+  using BoardReduceFunction = std::function<int32_t(int32_t, CellState, Position)>;
 
   class Board {
     public:
@@ -23,7 +25,7 @@ namespace Reversi {
       CellState getCellState(Position) const;
       bool putDisc(Position, Player);
       void getMoves(std::vector<Position> &, Player) const;
-      int32_t getMetric(std::function<int32_t(CellState, Position)>) const;
+      int32_t getMetric(BoardReduceFunction) const;
       int32_t getPlainMetric() const;
 
       friend std::ostream &operator<<(std::ostream &, const Board &);

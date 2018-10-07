@@ -4,8 +4,8 @@
 namespace Reversi {
 
   enum class Player {
-    White,
-    Black
+    White = 1,
+    Black = -1
   };
 
   Player invertPlayer(Player);

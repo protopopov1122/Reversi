@@ -32,7 +32,7 @@ namespace Reversi {
       return false;
     } else {
       std::size_t index = this->position_to_index(position);
-      uint64_t value = static_cast<uint64_t>(1) << index;
+      uint64_t value = 1LL << index;
       if (player == Player::White) {
         this->white |= value;
       } else {
@@ -64,13 +64,13 @@ namespace Reversi {
     positions.erase(std::unique(positions.begin(), positions.end()), positions.end());
   }
 
-  int32_t Board::getMetric(std::function<int32_t(CellState, Position)> eval) const {
+  int32_t Board::getMetric(BoardReduceFunction eval) const {
     int32_t metric = 0;
     for (std::size_t i = 0; i < 64; i++) {
       unsigned int row = i / 8 + 1;
       char col = i % 8 + 'A';
       Position pos(col, row);
-      metric += eval(this->getCellState(pos), pos);
+      metric = eval(metric, this->getCellState(pos), pos);
     }
     return metric;
   }
@@ -79,9 +79,9 @@ namespace Reversi {
     int32_t metric = 0;
     for (std::size_t i = 0; i < 64; i++) {
       if (((this->black >> i) & 1) != 0) {
-        metric--;
+        metric += static_cast<int>(CellState::Black);
       } else if (((this->white >> i) & 1) != 0) {
-        metric++;
+        metric += static_cast<int>(CellState::White);
       }
     }
     return metric;
@@ -154,7 +154,7 @@ namespace Reversi {
       c >= 'A' && c <= 'H' && r >= 1 && r <= 8 && found && this->getCellState(Position(c, r)) == state;
       c += cdir, r += rdir) {
       std::size_t index = this->position_to_index(Position(c, r));
-      uint64_t value = static_cast<uint64_t>(1) << index;
+      uint64_t value = 1LL << index;
       if (player == Player::White) {
         this->black &= ~value;
         this->white |= value;
