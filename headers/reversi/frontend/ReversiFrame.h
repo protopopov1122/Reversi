@@ -11,7 +11,7 @@ namespace Reversi::Frontend {
    public:
     ReversiFrame(std::string);
    private:
-    ReversiHumanHumanSession session;
+    ReversiHumanAISession session;
     ReversiSessionBoard sessionBoard;
   };
 }

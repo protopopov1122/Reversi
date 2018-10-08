@@ -40,10 +40,10 @@ namespace Reversi::Frontend {
   }
 
   ReversiHumanAISession::ReversiHumanAISession()
-    : ReversiSession::ReversiSession() {}
+    : ReversiSession::ReversiSession(), threads(4) {}
 
   ReversiHumanAISession::ReversiHumanAISession(const State &state)
-    : ReversiSession::ReversiSession(state) {}
+    : ReversiSession::ReversiSession(state), threads(4) {}
 
   void ReversiHumanAISession::onClick(Position pos) {
     if (this->state.getBoard().getCellState(pos) != CellState::Empty) {
@@ -57,8 +57,7 @@ namespace Reversi::Frontend {
     this->state.getBoard().getMoves(moves, this->state.getPlayer());
     if (std::count(moves.begin(), moves.end(), pos) > 0 && state.apply(pos)) {
       Node root(state);
-      auto move = root.build(6, strat);
-      // std::cout << root << std::endl;
+      auto move = root.build(6, strat, this->threads);
       if (move && move.value().first) {
         this->state.apply(move.value().first.value());
       } else {

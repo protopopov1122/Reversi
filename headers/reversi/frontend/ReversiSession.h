@@ -49,6 +49,8 @@ namespace Reversi::Frontend {
     ReversiHumanAISession(const State &);
 
     void onClick(Position) override;
+   private:
+    FixedThreadPool threads;
   };
 }
 
