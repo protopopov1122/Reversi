@@ -8,7 +8,8 @@ namespace Reversi::Frontend {
 
 
   ReversiFrame::ReversiFrame(std::string title)
-     : wxFrame::wxFrame(nullptr, wxID_DEFAULT, title, wxDefaultPosition, wxSize(600, 600)), sessionBoard(session) {
+     : wxFrame::wxFrame(nullptr, wxID_DEFAULT, title, wxDefaultPosition, wxSize(600, 600)),
+       session(Player::Black) {
     wxBoxSizer *frameSizer = new wxBoxSizer(wxHORIZONTAL);
     this->SetSizer(frameSizer);
     wxPanel *panel = new wxPanel(this, wxID_ANY);
@@ -16,7 +17,7 @@ namespace Reversi::Frontend {
     wxBoxSizer *sizer = new wxBoxSizer(wxHORIZONTAL);
     panel->SetSizer(sizer);
 
-    ReversiBoard *boardWindow = new ReversiBoard(panel, wxID_ANY, this->sessionBoard, this->sessionBoard);
+    ReversiBoard *boardWindow = new ReversiBoard(panel, wxID_ANY, this->session);
     sizer->Add(boardWindow, 1, wxALL | wxEXPAND);
 
     Board board;
@@ -25,8 +26,9 @@ namespace Reversi::Frontend {
     board.putDisc(Position('D', 4), Player::Black);
     board.putDisc(Position('E', 5), Player::Black);
     State state(board, Player::Black);
-    this->session.setState(state);
-    this->session.onStateUpdate([boardWindow]() {
+    this->session.getEngine().setState(state);
+    this->session.getEngine().addEventListener(this->updateListener);
+    this->updateListener.setCallback([boardWindow](const State &state) {
       boardWindow->update();
     });
   }

@@ -5,8 +5,8 @@
 
 namespace Reversi::Frontend {
 
-  ReversiBoard::ReversiBoard(wxWindow *parent, wxWindowID id, BoardController &controller, BoardModel &model)
-    : wxWindow::wxWindow(parent, id), controller(controller), model(model) {
+  ReversiBoard::ReversiBoard(wxWindow *parent, wxWindowID id, ReversiSession &session)
+    : wxWindow::wxWindow(parent, id), session(session) {
     this->SetBackgroundStyle(wxBG_STYLE_PAINT);
     this->Bind(wxEVT_LEFT_DOWN, &ReversiBoard::OnMouseClick, this);
     this->Bind(wxEVT_PAINT, &ReversiBoard::OnPaintEvent, this);
@@ -21,7 +21,7 @@ namespace Reversi::Frontend {
     wxSize size = this->GetSize();
     char row = static_cast<char>(8.0f * point.x / size.GetWidth()) + 'A';
     unsigned int col = static_cast<unsigned int>(8.0f * point.y / size.GetHeight()) + 1;
-    this->controller.onClick(Position(row, col));
+    this->session.onClick(Position(row, col));
   }
 
   void ReversiBoard::OnPaintEvent(wxPaintEvent &evt) {
@@ -60,9 +60,10 @@ namespace Reversi::Frontend {
 
     // Draw discs
     dc.SetPen(discBorderPen);
+    const Board &board = this->session.getState().getBoard();
     for (char row = 'A'; row <= 'H'; row++) {
       for (unsigned int col = 1; col <= 8; col++) {
-        CellState cell = this->model.getBoard().getCellState(Position(row, col));
+        CellState cell = board.getCellState(Position(row, col));
         if (cell != CellState::Empty) {
           wxCoord x = (row - 'A') * cellSize.GetWidth();
           wxCoord y = (col - 1) * cellSize.GetHeight();

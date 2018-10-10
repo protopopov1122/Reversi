@@ -17,6 +17,24 @@ namespace Reversi {
   };
 
   template <typename T>
+  class FunctionEventListener : public EventListener<T> {
+   public:
+    FunctionEventListener()
+      : callback([](const T &t) {}) {}
+    FunctionEventListener(std::function<void (const T &)> fn)
+      : callback(fn) {}
+
+    void setCallback(std::function<void (const T &)> fn) {
+      this->callback = fn;
+    }
+    void receiveEvent(const T &evt) override {
+      this->callback(evt);
+    }
+   private:
+    std::function<void(const T &)> callback;
+  };
+
+  template <typename T>
   class EventSource {
    public:
     virtual ~EventSource() = default;
@@ -36,11 +54,11 @@ namespace Reversi {
     std::vector<EventListener<T> *> listeners;
   };
 
-  class AbstractGameEngine : public EventListener<PlayerMove>, public EventSource<State> {
+  class GameEngine : public EventListener<PlayerMove>, public EventSource<State> {
    public:
-    AbstractGameEngine();
-    AbstractGameEngine(const State &);
-    virtual ~AbstractGameEngine() = default;
+    GameEngine();
+    GameEngine(const State &);
+    virtual ~GameEngine() = default;
     void setState(const State &);
     const State &getState() const;
    protected:
@@ -49,8 +67,10 @@ namespace Reversi {
     State state;
   };
 
-  class GameEngine : public AbstractGameEngine {
+  class DefaultGameEngine : public GameEngine {
    public:
+    DefaultGameEngine();
+    DefaultGameEngine(const State &);
     void receiveEvent(const PlayerMove &) override;
    protected:
     bool hasMoves(Player) const;

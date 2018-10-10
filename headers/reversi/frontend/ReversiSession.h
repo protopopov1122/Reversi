@@ -1,56 +1,42 @@
 #ifndef REVERSI_FRONTEND_REVERSI_SESSION_H_
 #define REVERSI_FRONTEND_REVERSI_SESSION_H_
 
-#include "reversi/frontend/BoardController.h"
-#include "reversi/frontend/BoardModel.h"
+#include "reversi/frontend/base.h"
 
 namespace Reversi::Frontend {
 
   class ReversiSession {
    public:
-    ReversiSession();
-    ReversiSession(const State &);
     virtual ~ReversiSession() = default;
-
-    void setState(const State &);
-    const State &getState() const;
-    void onStateUpdate(std::function<void()>);
-    
+    virtual const State &getState() const = 0;
     virtual void onClick(Position) = 0;
+  };
+
+  class DefaultReversiSession : public ReversiSession {
+   public:
+    DefaultReversiSession();
+    DefaultReversiSession(const State &);
+
+    GameEngine &getEngine();
+    const State &getState() const override;
    protected:
-    void stateUpdated() const;
-
-    State state;
-   private:
-    std::vector<std::function<void()>> update;
+    DefaultGameEngine engine;
   };
 
-  class ReversiSessionBoard : public BoardController, public BoardModel {
+  class ReversiHumanHumanSession : public DefaultReversiSession {
    public:
-    ReversiSessionBoard(ReversiSession &);
-
-    const Board &getBoard() override;
-    void onClick(Position) override;
-   private:
-    ReversiSession &session;
-  };
-
-  class ReversiHumanHumanSession : public ReversiSession {
-   public:
-    ReversiHumanHumanSession();
-    ReversiHumanHumanSession(const State &);
-
     void onClick(Position) override;
   };
 
-  class ReversiHumanAISession : public ReversiSession {
+  class ReversiHumanAISession : public DefaultReversiSession {
    public:
-    ReversiHumanAISession();
-    ReversiHumanAISession(const State &);
-
+    ReversiHumanAISession(Player);
     void onClick(Position) override;
    private:
-    FixedThreadPool threads;
+    void aiTurn(const State &);
+
+    FunctionEventListener<State> listener;
+    Player human;
   };
 }
 
