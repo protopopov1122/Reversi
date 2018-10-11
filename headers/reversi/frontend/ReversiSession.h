@@ -2,6 +2,7 @@
 #define REVERSI_FRONTEND_REVERSI_SESSION_H_
 
 #include "reversi/frontend/base.h"
+#include <atomic>
 
 namespace Reversi::Frontend {
 
@@ -26,18 +27,42 @@ namespace Reversi::Frontend {
 
   class ReversiHumanHumanSession : public DefaultReversiSession {
    public:
+    ReversiHumanHumanSession();
+    ReversiHumanHumanSession(const State &);
     void onClick(Position) override;
   };
 
   class ReversiHumanAISession : public DefaultReversiSession {
    public:
     ReversiHumanAISession(Player);
+    ReversiHumanAISession(Player, const State &);
     void onClick(Position) override;
    private:
     void aiTurn(const State &);
 
     FunctionEventListener<State> listener;
     Player human;
+  };
+
+  class ReversiAIAISession : public DefaultReversiSession {
+   public:
+    ReversiAIAISession();
+    ReversiAIAISession(const State &);
+    void onClick(Position) override;
+   private:
+    void aiTurn(const State &);
+
+    std::atomic<bool> aiRunning;
+  };
+
+  class ReversiSessionFactory {
+   public:
+    static std::unique_ptr<DefaultReversiSession> createHumanHumanSession();
+    static std::unique_ptr<DefaultReversiSession> createHumanHumanSession(const State &);
+    static std::unique_ptr<DefaultReversiSession> createHumanAISession(Player);
+    static std::unique_ptr<DefaultReversiSession> createHumanAISession(Player, const State &);
+    static std::unique_ptr<DefaultReversiSession> createAIAISession();
+    static std::unique_ptr<DefaultReversiSession> createAIAISession(const State &);
   };
 }
 
