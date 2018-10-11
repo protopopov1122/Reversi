@@ -21,6 +21,7 @@ namespace Reversi::Frontend {
     const State &getState() const override;
    protected:
     DefaultGameEngine engine;
+    FixedThreadPool threads;
   };
 
   class ReversiHumanHumanSession : public DefaultReversiSession {

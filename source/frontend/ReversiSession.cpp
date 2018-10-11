@@ -1,12 +1,17 @@
 #include "reversi/frontend/ReversiSession.h"
 #include <algorithm>
+#include <thread>
+#include <iostream>
 
 namespace Reversi::Frontend {
 
-  DefaultReversiSession::DefaultReversiSession() {}
+  static std::size_t THREAD_POOL_CAPACITY = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
+
+  DefaultReversiSession::DefaultReversiSession()
+    : threads(THREAD_POOL_CAPACITY) {}
 
   DefaultReversiSession::DefaultReversiSession(const State &state)
-    : engine(state) {}
+    : engine(state), threads(THREAD_POOL_CAPACITY) {}
 
   GameEngine &DefaultReversiSession::getEngine() {
     return this->engine;
@@ -37,14 +42,17 @@ namespace Reversi::Frontend {
   }
 
   void ReversiHumanAISession::aiTurn(const State &state) {
-    BoardReduceFunction reduce = [](int32_t sum, CellState state, Position position) {
-      return sum + static_cast<int>(state);
-    };
-    Strategy strat = {reduce, reduce};
-    Node root(state);
-    auto move = root.build(7, strat);
-    if (move && move.value().first) {
-      this->engine.receiveEvent(PlayerMove(state.getPlayer(), move.value().first.value()));
-    }
+    std::thread thread([&]() {
+      BoardReduceFunction reduce = [](int32_t sum, CellState state, Position position) {
+        return sum + static_cast<int>(state);
+      };
+      Strategy strat = {reduce, reduce};
+      Node root(state);
+      auto move = root.build(5, strat, this->threads);
+      if (move && move.value().first) {
+        this->engine.receiveEvent(PlayerMove(state.getPlayer(), move.value().first.value()));
+      }
+    });
+    thread.detach();
   }
 }

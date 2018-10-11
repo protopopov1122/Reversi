@@ -13,7 +13,8 @@ namespace Reversi::Frontend {
   }
 
   void ReversiBoard::update() {
-    this->Refresh();
+    wxPaintEvent evt;
+    wxPostEvent(this, evt);
   }
 
   void ReversiBoard::OnMouseClick(wxMouseEvent &evt) {
