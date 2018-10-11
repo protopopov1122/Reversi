@@ -9,7 +9,7 @@ namespace Reversi::Frontend {
 
   ReversiFrame::ReversiFrame(std::string title)
      : wxFrame::wxFrame(nullptr, wxID_DEFAULT, title, wxDefaultPosition, wxSize(600, 600)),
-       session(Player::Black) {
+       session() {
     wxBoxSizer *frameSizer = new wxBoxSizer(wxHORIZONTAL);
     this->SetSizer(frameSizer);
     wxPanel *panel = new wxPanel(this, wxID_ANY);

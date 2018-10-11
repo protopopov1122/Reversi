@@ -1,17 +1,14 @@
 #include "reversi/frontend/ReversiSession.h"
 #include <algorithm>
-#include <thread>
-#include <iostream>
 
 namespace Reversi::Frontend {
 
-  static std::size_t THREAD_POOL_CAPACITY = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
+  static const unsigned int AI_DIFFICULTY = 5;
 
-  DefaultReversiSession::DefaultReversiSession()
-    : threads(THREAD_POOL_CAPACITY) {}
+  DefaultReversiSession::DefaultReversiSession() {}
 
   DefaultReversiSession::DefaultReversiSession(const State &state)
-    : engine(state), threads(THREAD_POOL_CAPACITY) {}
+    : engine(state) {}
 
   GameEngine &DefaultReversiSession::getEngine() {
     return this->engine;
@@ -31,24 +28,10 @@ namespace Reversi::Frontend {
   }
 
   ReversiHumanAISession::ReversiHumanAISession(Player human)
-    : human(human) {
-    this->engine.addEventListener(this->listener);
-    this->listener.setCallback([&](const State &state) {
-      if (state.getPlayer() == invertPlayer(this->human)) {
-        this->aiTurn(state);
-      }
-    });
-  }
+    : human(human), ai(invertPlayer(human), 5, this->engine) {}
 
   ReversiHumanAISession::ReversiHumanAISession(Player human, const State &state)
-    : DefaultReversiSession::DefaultReversiSession(state), human(human) {
-    this->engine.addEventListener(this->listener);
-    this->listener.setCallback([&](const State &state) {
-      if (state.getPlayer() == invertPlayer(this->human)) {
-        this->aiTurn(state);
-      }
-    });
-  }
+    : DefaultReversiSession::DefaultReversiSession(state), human(human), ai(invertPlayer(human), AI_DIFFICULTY, this->engine) {}
 
   void ReversiHumanAISession::onClick(Position position) {
     if (this->getState().getPlayer() == this->human) {
@@ -56,48 +39,21 @@ namespace Reversi::Frontend {
     }
   }
 
-  void ReversiHumanAISession::aiTurn(const State &state) {
-    std::thread thread([&]() {
-      BoardReduceFunction reduce = [](int32_t sum, CellState state, Position position) {
-        return sum + static_cast<int>(state);
-      };
-      Strategy strat = {reduce, reduce};
-      Node root(state);
-      auto move = root.build(5, strat, this->threads);
-      if (move && move.value().first) {
-        this->engine.receiveEvent(PlayerMove(state.getPlayer(), move.value().first.value()));
-      }
-    });
-    thread.detach();
-  }
-
   ReversiAIAISession::ReversiAIAISession()
-    : aiRunning(false) {}
+    : aiWhite(Player::White, AI_DIFFICULTY, this->engine, true), aiBlack(Player::Black, AI_DIFFICULTY, this->engine, true) {}
 
   ReversiAIAISession::ReversiAIAISession(const State &state)
-    : DefaultReversiSession::DefaultReversiSession(state), aiRunning(false) {}
+    : DefaultReversiSession::DefaultReversiSession(state),
+      aiWhite(Player::White, AI_DIFFICULTY, this->engine, true), aiBlack(Player::Black, AI_DIFFICULTY, this->engine, true) {}
 
   void ReversiAIAISession::onClick(Position position) {
-    if (!this->aiRunning.load()) {
-      this->aiTurn(this->engine.getState());
-    }
-  }
-
-  void ReversiAIAISession::aiTurn(const State &state) {
-    this->aiRunning = true;
-    std::thread thread([&]() {
-      BoardReduceFunction reduce = [](int32_t sum, CellState state, Position position) {
-        return sum + static_cast<int>(state);
-      };
-      Strategy strat = {reduce, reduce};
-      Node root(state);
-      auto move = root.build(5, strat, this->threads);
-      if (move && move.value().first) {
-        this->engine.receiveEvent(PlayerMove(state.getPlayer(), move.value().first.value()));
+    if (!this->aiWhite.isActive() && !this->aiBlack.isActive()) {
+      if (this->engine.getState().getPlayer() == Player::White) {
+        this->aiWhite.makeMove();
+      } else {
+        this->aiBlack.makeMove();
       }
-      this->aiRunning = false;
-    });
-    thread.detach();
+    }
   }
 
   std::unique_ptr<DefaultReversiSession> ReversiSessionFactory::createHumanHumanSession() {

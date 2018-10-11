@@ -11,7 +11,7 @@ namespace Reversi::Frontend {
    public:
     ReversiFrame(std::string);
    private:
-    ReversiHumanAISession session;
+    ReversiAIAISession session;
     FunctionEventListener<State> updateListener;
   };
 }

@@ -22,7 +22,6 @@ namespace Reversi::Frontend {
     const State &getState() const override;
    protected:
     DefaultGameEngine engine;
-    FixedThreadPool threads;
   };
 
   class ReversiHumanHumanSession : public DefaultReversiSession {
@@ -38,10 +37,8 @@ namespace Reversi::Frontend {
     ReversiHumanAISession(Player, const State &);
     void onClick(Position) override;
    private:
-    void aiTurn(const State &);
-
-    FunctionEventListener<State> listener;
     Player human;
+    AIPlayer ai;
   };
 
   class ReversiAIAISession : public DefaultReversiSession {
@@ -50,9 +47,8 @@ namespace Reversi::Frontend {
     ReversiAIAISession(const State &);
     void onClick(Position) override;
    private:
-    void aiTurn(const State &);
-
-    std::atomic<bool> aiRunning;
+    AIPlayer aiWhite;
+    AIPlayer aiBlack;
   };
 
   class ReversiSessionFactory {
