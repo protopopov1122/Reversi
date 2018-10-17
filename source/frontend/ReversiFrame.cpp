@@ -1,6 +1,7 @@
 #include "reversi/frontend/ReversiFrame.h"
 #include <wx/sizer.h>
 #include <wx/menu.h>
+#include <wx/stattext.h>
 #include <iostream>
 #include <algorithm>
 
@@ -14,11 +15,32 @@ namespace Reversi::Frontend {
     this->SetSizer(frameSizer);
     wxPanel *panel = new wxPanel(this, wxID_ANY);
     frameSizer->Add(panel, 1, wxALL | wxEXPAND);
-    wxBoxSizer *sizer = new wxBoxSizer(wxHORIZONTAL);
+    wxBoxSizer *sizer = new wxBoxSizer(wxVERTICAL);
     panel->SetSizer(sizer);
 
     this->boardWindow = new ReversiBoard(panel, wxID_ANY);
     sizer->Add(this->boardWindow, 1, wxALL | wxEXPAND);
+
+    wxPanel *difficultyPanel = new wxPanel(panel, wxID_ANY);
+    sizer->Add(difficultyPanel, 0, wxALL | wxEXPAND);
+    wxBoxSizer *difficultyPanelSizer = new wxBoxSizer(wxHORIZONTAL);
+    difficultyPanel->SetSizer(difficultyPanelSizer);
+
+    const unsigned int MAX_DIFFICULTY = 10;
+
+    difficultyPanelSizer->Add(new wxStaticText(difficultyPanel, wxID_ANY, "White: "), 0, wxALIGN_CENTER);
+    this->whiteDifficulty = new wxSpinCtrl(difficultyPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
+      wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, MAX_DIFFICULTY, DefaultReversiSession::DEFAULT_AI_DIFFICULTY);
+    difficultyPanelSizer->Add(this->whiteDifficulty, 0, wxRIGHT, 20);
+    difficultyPanelSizer->Add(new wxStaticText(difficultyPanel, wxID_ANY, "Black: "), 0, wxALIGN_CENTER);
+    this->blackDifficulty = new wxSpinCtrl(difficultyPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
+      wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, MAX_DIFFICULTY, DefaultReversiSession::DEFAULT_AI_DIFFICULTY);
+    difficultyPanelSizer->Add(this->blackDifficulty, 0, wxRIGHT, 20);
+    this->whiteDifficulty->Enable(false);
+    this->blackDifficulty->Enable(false);
+
+    this->whiteDifficulty->Bind(wxEVT_SPINCTRL, &ReversiFrame::OnWhiteSpin, this);
+    this->blackDifficulty->Bind(wxEVT_SPINCTRL, &ReversiFrame::OnBlackSpin, this);
 
     wxMenuBar *menuBar = new wxMenuBar();
     wxMenu *gameMenu = new wxMenu();
@@ -52,6 +74,9 @@ namespace Reversi::Frontend {
     if (this->session) {
       this->session->getEngine().addEventListener(this->updateListener);
       this->boardWindow->setSession(this->session.get());
+
+      this->whiteDifficulty->Enable(this->session->isAI(Player::White));
+      this->blackDifficulty->Enable(this->session->isAI(Player::Black));
     } else {
       this->boardWindow->setSession(nullptr);
     }
@@ -81,5 +106,17 @@ namespace Reversi::Frontend {
 
   void ReversiFrame::OnQuit(wxCommandEvent &evt) {
     this->Destroy();
+  }
+
+  void ReversiFrame::OnWhiteSpin(wxCommandEvent &evt) {
+    if (this->session) {
+      this->session->setAIDifficulty(Player::White, this->whiteDifficulty->GetValue());
+    }
+  }
+
+  void ReversiFrame::OnBlackSpin(wxCommandEvent &evt) {
+    if (this->session) {
+      this->session->setAIDifficulty(Player::Black, this->blackDifficulty->GetValue());
+    }
   }
 }

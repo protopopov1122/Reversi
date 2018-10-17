@@ -3,7 +3,7 @@
 
 namespace Reversi::Frontend {
 
-  static const unsigned int AI_DIFFICULTY = 5;
+  const unsigned int DefaultReversiSession::DEFAULT_AI_DIFFICULTY = 5;
 
   DefaultReversiSession::DefaultReversiSession() {}
 
@@ -32,6 +32,14 @@ namespace Reversi::Frontend {
     bool isCurrentlyProcessing() override {
       return false;
     }
+
+    bool isAI(Player player) override {
+      return false;
+    }
+
+    bool setAIDifficulty(Player player, unsigned int difficulty) override {
+      return false;
+    }
   };
 
   class ReversiHumanAISession : public DefaultReversiSession {
@@ -51,6 +59,19 @@ namespace Reversi::Frontend {
 
     bool isCurrentlyProcessing() override {
       return this->getState().getPlayer() != human && this->ai.isActive();
+    }
+
+    bool isAI(Player player) override {
+      return player != this->human;
+    }
+
+    bool setAIDifficulty(Player player, unsigned int difficulty) override {
+      if (player != this->human) {
+        this->ai.setDifficulty(difficulty);
+        return true;
+      } else {
+        return false;
+      }
     }
    private:
     Player human;
@@ -81,6 +102,19 @@ namespace Reversi::Frontend {
       return (this->getState().getPlayer() == Player::White && this->aiWhite.isActive()) ||
         (this->getState().getPlayer() == Player::Black && this->aiBlack.isActive());
     }
+
+    bool isAI(Player player) override {
+      return true;
+    }
+
+    bool setAIDifficulty(Player player, unsigned int difficulty) override {
+      if (player == Player::White) {
+        this->aiWhite.setDifficulty(difficulty);
+      } else {
+        this->aiBlack.setDifficulty(difficulty);
+      }
+      return true;
+    }
    private:
     AIPlayer aiWhite;
     AIPlayer aiBlack;
@@ -103,11 +137,11 @@ namespace Reversi::Frontend {
   });
 
   std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::Human_AI = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
-    return std::make_unique<ReversiHumanAISession>(state.getPlayer(), state, AI_DIFFICULTY);
+    return std::make_unique<ReversiHumanAISession>(state.getPlayer(), state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY);
   });
 
   std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::AI_AI = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
-    return std::make_unique<ReversiAIAISession>(state, AI_DIFFICULTY, AI_DIFFICULTY);
+    return std::make_unique<ReversiAIAISession>(state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY, DefaultReversiSession::DEFAULT_AI_DIFFICULTY);
   });
 
 }

@@ -5,6 +5,7 @@
 #include "reversi/frontend/ReversiSession.h"
 #include "reversi/frontend/ReversiBoard.h"
 #include <functional>
+#include <wx/spinctrl.h>
 
 namespace Reversi::Frontend {
 
@@ -18,10 +19,14 @@ namespace Reversi::Frontend {
     void OnHumanHumanGame(wxCommandEvent &);
     void OnHumanAIGame(wxCommandEvent &);
     void OnAIAIGame(wxCommandEvent &);
+    void OnWhiteSpin(wxCommandEvent &);
+    void OnBlackSpin(wxCommandEvent &);
 
     std::unique_ptr<DefaultReversiSession> session;
     FunctionEventListener<State> updateListener;
     ReversiBoard *boardWindow;
+    wxSpinCtrl *whiteDifficulty;
+    wxSpinCtrl *blackDifficulty;
   };
 }
 

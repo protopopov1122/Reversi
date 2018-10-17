@@ -21,6 +21,10 @@ namespace Reversi::Frontend {
     GameEngine &getEngine();
     const State &getState() const override;
     virtual bool isCurrentlyProcessing() = 0;
+    virtual bool isAI(Player) = 0;
+    virtual bool setAIDifficulty(Player, unsigned int) = 0;
+
+    static const unsigned int DEFAULT_AI_DIFFICULTY;
    protected:
     DefaultGameEngine engine;
   };
