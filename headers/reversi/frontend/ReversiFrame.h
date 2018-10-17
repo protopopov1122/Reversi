@@ -14,6 +14,11 @@ namespace Reversi::Frontend {
     void newSession(ReversiSessionFactory &, const State &);
     void newSession(ReversiSessionFactory &);
    private:
+    void OnQuit(wxCommandEvent &);
+    void OnHumanHumanGame(wxCommandEvent &);
+    void OnHumanAIGame(wxCommandEvent &);
+    void OnAIAIGame(wxCommandEvent &);
+
     std::unique_ptr<DefaultReversiSession> session;
     FunctionEventListener<State> updateListener;
     ReversiBoard *boardWindow;

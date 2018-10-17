@@ -19,6 +19,7 @@ namespace Reversi::Frontend {
 
   void ReversiBoard::setSession(ReversiSession *session) {
     this->session = session;
+    this->update();
   }
 
   void ReversiBoard::OnMouseClick(wxMouseEvent &evt) {

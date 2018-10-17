@@ -26,6 +26,10 @@ namespace Reversi {
   DefaultGameEngine::DefaultGameEngine(const State &state)
     : GameEngine::GameEngine(state) {}
 
+  void DefaultGameEngine::triggerEvent() {
+    this->stateUpdated();
+  }
+
   void DefaultGameEngine::receiveEvent(const PlayerMove &move) {
     Position position('A', 1);
     Player player;

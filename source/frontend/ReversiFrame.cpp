@@ -1,5 +1,6 @@
 #include "reversi/frontend/ReversiFrame.h"
 #include <wx/sizer.h>
+#include <wx/menu.h>
 #include <iostream>
 #include <algorithm>
 
@@ -19,8 +20,30 @@ namespace Reversi::Frontend {
     this->boardWindow = new ReversiBoard(panel, wxID_ANY);
     sizer->Add(this->boardWindow, 1, wxALL | wxEXPAND);
 
+    wxMenuBar *menuBar = new wxMenuBar();
+    wxMenu *gameMenu = new wxMenu();
+    menuBar->Append(gameMenu, "Game");
+
+    wxWindowID idHumanHuman = wxNewId();
+    wxMenuItem *humanHumanItem = gameMenu->Append(idHumanHuman, "Human-Human");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnHumanHumanGame, this, idHumanHuman);
+    wxWindowID idHumanAI = wxNewId();
+    wxMenuItem *humanAIItem = gameMenu->Append(idHumanAI, "Human-AI");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnHumanAIGame, this, idHumanAI);
+    wxWindowID idAIAI = wxNewId();
+    wxMenuItem *AIAIIem = gameMenu->Append(idAIAI, "AI-AI");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnAIAIGame, this, idAIAI);
+
+    gameMenu->AppendSeparator();
+    wxMenuItem *quitItem = gameMenu->Append(wxID_EXIT, "Quit");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnQuit, this, wxID_EXIT);
+    this->SetMenuBar(menuBar);
+  
     this->updateListener.setCallback([&](const State &state) {
       this->boardWindow->update();
+      if (this->session) {
+        this->Enable(!this->session->isCurrentlyProcessing());
+      }
     });
   }
 
@@ -42,5 +65,21 @@ namespace Reversi::Frontend {
     board.putDisc(Position('E', 5), Player::Black);
     State state(board, Player::Black);
     this->newSession(factory, state);
+  }
+
+  void ReversiFrame::OnHumanHumanGame(wxCommandEvent &evt) {
+    this->newSession(*ReversiSessionFactory::Human_Human);
+  }
+
+  void ReversiFrame::OnHumanAIGame(wxCommandEvent &evt) {
+    this->newSession(*ReversiSessionFactory::Human_AI);
+  }
+
+  void ReversiFrame::OnAIAIGame(wxCommandEvent &evt) {
+    this->newSession(*ReversiSessionFactory::AI_AI);
+  }
+
+  void ReversiFrame::OnQuit(wxCommandEvent &evt) {
+    this->Destroy();
   }
 }

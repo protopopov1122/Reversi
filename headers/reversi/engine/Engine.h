@@ -28,6 +28,7 @@ namespace Reversi {
    public:
     DefaultGameEngine();
     DefaultGameEngine(const State &);
+    void triggerEvent();
     void receiveEvent(const PlayerMove &) override;
    protected:
     bool hasMoves(Player) const;

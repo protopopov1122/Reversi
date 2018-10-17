@@ -20,6 +20,7 @@ namespace Reversi::Frontend {
 
     GameEngine &getEngine();
     const State &getState() const override;
+    virtual bool isCurrentlyProcessing() = 0;
    protected:
     DefaultGameEngine engine;
   };

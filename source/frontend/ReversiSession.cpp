@@ -9,7 +9,7 @@ namespace Reversi::Frontend {
 
   DefaultReversiSession::DefaultReversiSession(const State &state)
     : engine(state) {}
-
+  
   GameEngine &DefaultReversiSession::getEngine() {
     return this->engine;
   }
@@ -21,10 +21,16 @@ namespace Reversi::Frontend {
   class ReversiHumanHumanSession : public DefaultReversiSession {
    public:
     ReversiHumanHumanSession() {}
+
     ReversiHumanHumanSession(const State & state)
       : DefaultReversiSession::DefaultReversiSession(state) {}
+
     void onClick(Position position) override {
       this->engine.receiveEvent(PlayerMove(this->getState().getPlayer(), position));
+    }
+
+    bool isCurrentlyProcessing() override {
+      return false;
     }
   };
 
@@ -32,12 +38,19 @@ namespace Reversi::Frontend {
    public:
     ReversiHumanAISession(Player human, unsigned int difficulty)
       : human(human), ai(invertPlayer(human), difficulty, this->engine) {}
+
     ReversiHumanAISession(Player human, const State &state, unsigned int difficulty)
       : DefaultReversiSession::DefaultReversiSession(state), human(human), ai(invertPlayer(human), difficulty, this->engine) {}
+
     void onClick(Position position) override {
       if (this->getState().getPlayer() == this->human) {
         this->engine.receiveEvent(PlayerMove(this->getState().getPlayer(), position));
       }
+      this->engine.triggerEvent();
+    }
+
+    bool isCurrentlyProcessing() override {
+      return this->getState().getPlayer() != human && this->ai.isActive();
     }
    private:
     Player human;
@@ -48,9 +61,11 @@ namespace Reversi::Frontend {
    public:
     ReversiAIAISession(unsigned int whiteDifficulty, unsigned int blackDifficulty)
       : aiWhite(Player::White, whiteDifficulty, this->engine, true), aiBlack(Player::Black, blackDifficulty, this->engine, true) {}
+   
     ReversiAIAISession(const State &state, unsigned int whiteDifficulty, unsigned int blackDifficulty)
       : DefaultReversiSession::DefaultReversiSession(state),
         aiWhite(Player::White, whiteDifficulty, this->engine, true), aiBlack(Player::Black, blackDifficulty, this->engine, true) {}
+   
     void onClick(Position position) override {
       if (!this->aiWhite.isActive() && !this->aiBlack.isActive()) {
         if (this->engine.getState().getPlayer() == Player::White) {
@@ -58,7 +73,13 @@ namespace Reversi::Frontend {
         } else {
           this->aiBlack.makeMove();
         }
+        this->engine.triggerEvent();
       }
+    }
+
+    bool isCurrentlyProcessing() override {
+      return (this->getState().getPlayer() == Player::White && this->aiWhite.isActive()) ||
+        (this->getState().getPlayer() == Player::Black && this->aiBlack.isActive());
     }
    private:
     AIPlayer aiWhite;
