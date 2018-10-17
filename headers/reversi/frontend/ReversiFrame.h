@@ -3,6 +3,7 @@
 
 #include "reversi/frontend/base.h"
 #include "reversi/frontend/ReversiSession.h"
+#include "reversi/frontend/ReversiBoard.h"
 #include <functional>
 
 namespace Reversi::Frontend {
@@ -10,9 +11,12 @@ namespace Reversi::Frontend {
   class ReversiFrame : public wxFrame {
    public:
     ReversiFrame(std::string);
+    void newSession(ReversiSessionFactory &, const State &);
+    void newSession(ReversiSessionFactory &);
    private:
-    ReversiAIAISession session;
+    std::unique_ptr<DefaultReversiSession> session;
     FunctionEventListener<State> updateListener;
+    ReversiBoard *boardWindow;
   };
 }
 

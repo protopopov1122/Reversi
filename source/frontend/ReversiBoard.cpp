@@ -5,7 +5,7 @@
 
 namespace Reversi::Frontend {
 
-  ReversiBoard::ReversiBoard(wxWindow *parent, wxWindowID id, ReversiSession &session)
+  ReversiBoard::ReversiBoard(wxWindow *parent, wxWindowID id, ReversiSession *session)
     : wxWindow::wxWindow(parent, id), session(session) {
     this->SetBackgroundStyle(wxBG_STYLE_PAINT);
     this->Bind(wxEVT_LEFT_DOWN, &ReversiBoard::OnMouseClick, this);
@@ -17,12 +17,18 @@ namespace Reversi::Frontend {
     wxPostEvent(this, evt);
   }
 
+  void ReversiBoard::setSession(ReversiSession *session) {
+    this->session = session;
+  }
+
   void ReversiBoard::OnMouseClick(wxMouseEvent &evt) {
     wxPoint point = evt.GetPosition();
     wxSize size = this->GetSize();
     char row = static_cast<char>(8.0f * point.x / size.GetWidth()) + 'A';
     unsigned int col = static_cast<unsigned int>(8.0f * point.y / size.GetHeight()) + 1;
-    this->session.onClick(Position(row, col));
+    if (this->session) {
+      this->session->onClick(Position(row, col));
+    }
   }
 
   void ReversiBoard::OnPaintEvent(wxPaintEvent &evt) {
@@ -60,20 +66,22 @@ namespace Reversi::Frontend {
     }
 
     // Draw discs
-    dc.SetPen(discBorderPen);
-    const Board &board = this->session.getState().getBoard();
-    for (char row = 'A'; row <= 'H'; row++) {
-      for (unsigned int col = 1; col <= 8; col++) {
-        CellState cell = board.getCellState(Position(row, col));
-        if (cell != CellState::Empty) {
-          wxCoord x = (row - 'A') * cellSize.GetWidth();
-          wxCoord y = (col - 1) * cellSize.GetHeight();
-          if (cell == CellState::White) {
-            dc.SetBrush(discWhiteBrush);
-          } else {
-            dc.SetBrush(discBlackBrush);
+    if (this->session) {
+      dc.SetPen(discBorderPen);
+      const Board &board = this->session->getState().getBoard();
+      for (char row = 'A'; row <= 'H'; row++) {
+        for (unsigned int col = 1; col <= 8; col++) {
+          CellState cell = board.getCellState(Position(row, col));
+          if (cell != CellState::Empty) {
+            wxCoord x = (row - 'A') * cellSize.GetWidth();
+            wxCoord y = (col - 1) * cellSize.GetHeight();
+            if (cell == CellState::White) {
+              dc.SetBrush(discWhiteBrush);
+            } else {
+              dc.SetBrush(discBlackBrush);
+            }
+            dc.DrawEllipse(x, y, cellSize.GetWidth(), cellSize.GetHeight());
           }
-          dc.DrawEllipse(x, y, cellSize.GetWidth(), cellSize.GetHeight());
         }
       }
     }

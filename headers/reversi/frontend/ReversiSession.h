@@ -24,41 +24,14 @@ namespace Reversi::Frontend {
     DefaultGameEngine engine;
   };
 
-  class ReversiHumanHumanSession : public DefaultReversiSession {
-   public:
-    ReversiHumanHumanSession();
-    ReversiHumanHumanSession(const State &);
-    void onClick(Position) override;
-  };
-
-  class ReversiHumanAISession : public DefaultReversiSession {
-   public:
-    ReversiHumanAISession(Player);
-    ReversiHumanAISession(Player, const State &);
-    void onClick(Position) override;
-   private:
-    Player human;
-    AIPlayer ai;
-  };
-
-  class ReversiAIAISession : public DefaultReversiSession {
-   public:
-    ReversiAIAISession();
-    ReversiAIAISession(const State &);
-    void onClick(Position) override;
-   private:
-    AIPlayer aiWhite;
-    AIPlayer aiBlack;
-  };
-
   class ReversiSessionFactory {
    public:
-    static std::unique_ptr<DefaultReversiSession> createHumanHumanSession();
-    static std::unique_ptr<DefaultReversiSession> createHumanHumanSession(const State &);
-    static std::unique_ptr<DefaultReversiSession> createHumanAISession(Player);
-    static std::unique_ptr<DefaultReversiSession> createHumanAISession(Player, const State &);
-    static std::unique_ptr<DefaultReversiSession> createAIAISession();
-    static std::unique_ptr<DefaultReversiSession> createAIAISession(const State &);
+    virtual ~ReversiSessionFactory() = default;
+    virtual std::unique_ptr<DefaultReversiSession> createSession(const State &) = 0;
+
+    static std::unique_ptr<ReversiSessionFactory> Human_Human;
+    static std::unique_ptr<ReversiSessionFactory> Human_AI;
+    static std::unique_ptr<ReversiSessionFactory> AI_AI;
   };
 }
 

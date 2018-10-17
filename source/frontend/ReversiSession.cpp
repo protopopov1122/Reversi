@@ -18,66 +18,75 @@ namespace Reversi::Frontend {
     return this->engine.getState();
   }
 
-  ReversiHumanHumanSession::ReversiHumanHumanSession() {}
-
-  ReversiHumanHumanSession::ReversiHumanHumanSession(const State &state)
-    : DefaultReversiSession::DefaultReversiSession(state) {}
-
-  void ReversiHumanHumanSession::onClick(Position position) {
-    this->engine.receiveEvent(PlayerMove(this->getState().getPlayer(), position));
-  }
-
-  ReversiHumanAISession::ReversiHumanAISession(Player human)
-    : human(human), ai(invertPlayer(human), 5, this->engine) {}
-
-  ReversiHumanAISession::ReversiHumanAISession(Player human, const State &state)
-    : DefaultReversiSession::DefaultReversiSession(state), human(human), ai(invertPlayer(human), AI_DIFFICULTY, this->engine) {}
-
-  void ReversiHumanAISession::onClick(Position position) {
-    if (this->getState().getPlayer() == this->human) {
+  class ReversiHumanHumanSession : public DefaultReversiSession {
+   public:
+    ReversiHumanHumanSession() {}
+    ReversiHumanHumanSession(const State & state)
+      : DefaultReversiSession::DefaultReversiSession(state) {}
+    void onClick(Position position) override {
       this->engine.receiveEvent(PlayerMove(this->getState().getPlayer(), position));
     }
-  }
+  };
 
-  ReversiAIAISession::ReversiAIAISession()
-    : aiWhite(Player::White, AI_DIFFICULTY, this->engine, true), aiBlack(Player::Black, AI_DIFFICULTY, this->engine, true) {}
-
-  ReversiAIAISession::ReversiAIAISession(const State &state)
-    : DefaultReversiSession::DefaultReversiSession(state),
-      aiWhite(Player::White, AI_DIFFICULTY, this->engine, true), aiBlack(Player::Black, AI_DIFFICULTY, this->engine, true) {}
-
-  void ReversiAIAISession::onClick(Position position) {
-    if (!this->aiWhite.isActive() && !this->aiBlack.isActive()) {
-      if (this->engine.getState().getPlayer() == Player::White) {
-        this->aiWhite.makeMove();
-      } else {
-        this->aiBlack.makeMove();
+  class ReversiHumanAISession : public DefaultReversiSession {
+   public:
+    ReversiHumanAISession(Player human, unsigned int difficulty)
+      : human(human), ai(invertPlayer(human), difficulty, this->engine) {}
+    ReversiHumanAISession(Player human, const State &state, unsigned int difficulty)
+      : DefaultReversiSession::DefaultReversiSession(state), human(human), ai(invertPlayer(human), difficulty, this->engine) {}
+    void onClick(Position position) override {
+      if (this->getState().getPlayer() == this->human) {
+        this->engine.receiveEvent(PlayerMove(this->getState().getPlayer(), position));
       }
     }
-  }
+   private:
+    Player human;
+    AIPlayer ai;
+  };
 
-  std::unique_ptr<DefaultReversiSession> ReversiSessionFactory::createHumanHumanSession() {
-    return std::make_unique<ReversiHumanHumanSession>();
-  }
+  class ReversiAIAISession : public DefaultReversiSession {
+   public:
+    ReversiAIAISession(unsigned int whiteDifficulty, unsigned int blackDifficulty)
+      : aiWhite(Player::White, whiteDifficulty, this->engine, true), aiBlack(Player::Black, blackDifficulty, this->engine, true) {}
+    ReversiAIAISession(const State &state, unsigned int whiteDifficulty, unsigned int blackDifficulty)
+      : DefaultReversiSession::DefaultReversiSession(state),
+        aiWhite(Player::White, whiteDifficulty, this->engine, true), aiBlack(Player::Black, blackDifficulty, this->engine, true) {}
+    void onClick(Position position) override {
+      if (!this->aiWhite.isActive() && !this->aiBlack.isActive()) {
+        if (this->engine.getState().getPlayer() == Player::White) {
+          this->aiWhite.makeMove();
+        } else {
+          this->aiBlack.makeMove();
+        }
+      }
+    }
+   private:
+    AIPlayer aiWhite;
+    AIPlayer aiBlack;
+  };
 
-  std::unique_ptr<DefaultReversiSession> ReversiSessionFactory::createHumanHumanSession(const State &state) {
+  class LambdaReversiSessionFactory : public ReversiSessionFactory {
+   public:
+    LambdaReversiSessionFactory(std::function<std::unique_ptr<DefaultReversiSession> (const State &)> build)
+      : build(build) {}
+    
+    std::unique_ptr<DefaultReversiSession> createSession(const State &state) override {
+      return this->build(state);
+    }
+   private:
+    std::function<std::unique_ptr<DefaultReversiSession> (const State &)> build;
+  };
+
+  std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::Human_Human = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
     return std::make_unique<ReversiHumanHumanSession>(state);
-  }
+  });
 
-  std::unique_ptr<DefaultReversiSession> ReversiSessionFactory::createHumanAISession(Player human) {
-    return std::make_unique<ReversiHumanAISession>(human);
-  }
+  std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::Human_AI = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
+    return std::make_unique<ReversiHumanAISession>(state.getPlayer(), state, AI_DIFFICULTY);
+  });
 
-  std::unique_ptr<DefaultReversiSession> ReversiSessionFactory::createHumanAISession(Player human, const State &state) {
-    return std::make_unique<ReversiHumanAISession>(human, state);
-  }
-
-  std::unique_ptr<DefaultReversiSession> ReversiSessionFactory::createAIAISession() {
-    return std::make_unique<ReversiAIAISession>();
-  }
-
-  std::unique_ptr<DefaultReversiSession> ReversiSessionFactory::createAIAISession(const State &state) {
-    return std::make_unique<ReversiAIAISession>(state);
-  }
+  std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::AI_AI = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
+    return std::make_unique<ReversiAIAISession>(state, AI_DIFFICULTY, AI_DIFFICULTY);
+  });
 
 }

@@ -8,14 +8,16 @@ namespace Reversi::Frontend {
 
   class ReversiBoard : public wxWindow {
    public:
-    ReversiBoard(wxWindow *, wxWindowID, ReversiSession &);
+    ReversiBoard(wxWindow *, wxWindowID, ReversiSession * = nullptr);
     void update();
+
+    void setSession(ReversiSession *);
    private:
     void OnPaintEvent(wxPaintEvent &);
     void OnMouseClick(wxMouseEvent &);
     void render(wxDC &);
 
-    ReversiSession &session;
+    ReversiSession *session;
   };
 }
 
