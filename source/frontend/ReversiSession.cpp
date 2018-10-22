@@ -1,5 +1,6 @@
 #include "reversi/frontend/ReversiSession.h"
 #include <algorithm>
+#include <wx/spinctrl.h>
 
 namespace Reversi::Frontend {
 
@@ -33,12 +34,8 @@ namespace Reversi::Frontend {
       return false;
     }
 
-    bool isAI(Player player) override {
-      return false;
-    }
-
-    bool setAIDifficulty(Player player, unsigned int difficulty) override {
-      return false;
+    wxWindow *getSettings(wxWindow *parent, wxWindowID id) override {
+      return nullptr;
     }
   };
 
@@ -61,17 +58,20 @@ namespace Reversi::Frontend {
       return this->getState().getPlayer() != human && this->ai.isActive();
     }
 
-    bool isAI(Player player) override {
-      return player != this->human;
-    }
-
-    bool setAIDifficulty(Player player, unsigned int difficulty) override {
-      if (player != this->human) {
-        this->ai.setDifficulty(difficulty);
-        return true;
-      } else {
-        return false;
-      }
+    wxWindow *getSettings(wxWindow *parent, wxWindowID id) override {
+      wxPanel *settingsPanel = new wxPanel(parent, id);
+      wxFlexGridSizer *sizer = new wxFlexGridSizer(2);
+      settingsPanel->SetSizer(sizer);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Human-AI"), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, ""));
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Difficulty: "), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
+      wxSpinCtrl *difficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
+        wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, 10, this->ai.getDifficulty());
+      sizer->Add(difficulty, 0, wxALIGN_CENTER);
+      difficulty->Bind(wxEVT_SPINCTRL, [&, difficulty](wxCommandEvent &evt) {
+        this->ai.setDifficulty(difficulty->GetValue());
+      });
+      return settingsPanel;
     }
    private:
     Player human;
@@ -103,17 +103,27 @@ namespace Reversi::Frontend {
         (this->getState().getPlayer() == Player::Black && this->aiBlack.isActive());
     }
 
-    bool isAI(Player player) override {
-      return true;
-    }
-
-    bool setAIDifficulty(Player player, unsigned int difficulty) override {
-      if (player == Player::White) {
-        this->aiWhite.setDifficulty(difficulty);
-      } else {
-        this->aiBlack.setDifficulty(difficulty);
-      }
-      return true;
+    wxWindow *getSettings(wxWindow *parent, wxWindowID id) override {
+      wxPanel *settingsPanel = new wxPanel(parent, id);
+      wxFlexGridSizer *sizer = new wxFlexGridSizer(2);
+      settingsPanel->SetSizer(sizer);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "AI-AI"), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, ""));
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "White difficulty: "), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
+      wxSpinCtrl *whiteDifficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
+        wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, 10, this->aiWhite.getDifficulty());
+      sizer->Add(whiteDifficulty, 0, wxALIGN_CENTER);
+      whiteDifficulty->Bind(wxEVT_SPINCTRL, [&, whiteDifficulty](wxCommandEvent &evt) {
+        this->aiWhite.setDifficulty(whiteDifficulty->GetValue());
+      });
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Black difficulty: "), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
+      wxSpinCtrl *blackDifficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
+        wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, 10, this->aiBlack.getDifficulty());
+      sizer->Add(blackDifficulty, 0, wxALIGN_CENTER);
+      blackDifficulty->Bind(wxEVT_SPINCTRL, [&, blackDifficulty](wxCommandEvent &evt) {
+        this->aiBlack.setDifficulty(blackDifficulty->GetValue());
+      });
+      return settingsPanel;
     }
    private:
     AIPlayer aiWhite;
