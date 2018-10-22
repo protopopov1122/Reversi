@@ -8,6 +8,8 @@
 
 namespace Reversi::Frontend {
 
+  wxDECLARE_EVENT(ReversiFrameUpdateEvent, wxThreadEvent);
+
   class ReversiFrame : public wxFrame {
    public:
     ReversiFrame(std::string);
@@ -18,6 +20,9 @@ namespace Reversi::Frontend {
     void OnHumanHumanGame(wxCommandEvent &);
     void OnHumanAIGame(wxCommandEvent &);
     void OnAIAIGame(wxCommandEvent &);
+    void OnUpdate(wxThreadEvent &);
+    
+    void updateStatistics(const State &);
 
     std::unique_ptr<DefaultReversiSession> session;
     FunctionEventListener<State> updateListener;

@@ -7,6 +7,7 @@
 
 namespace Reversi::Frontend {
 
+  wxDEFINE_EVENT(ReversiFrameUpdateEvent, wxThreadEvent);
 
   ReversiFrame::ReversiFrame(std::string title)
      : wxFrame::wxFrame(nullptr, wxID_DEFAULT, title, wxDefaultPosition, wxSize(600, 600)),
@@ -44,12 +45,13 @@ namespace Reversi::Frontend {
     wxMenuItem *quitItem = gameMenu->Append(wxID_EXIT, "Quit");
     this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnQuit, this, wxID_EXIT);
     this->SetMenuBar(menuBar);
+    
+    this->CreateStatusBar(1);
+    this->Bind(ReversiFrameUpdateEvent, &ReversiFrame::OnUpdate, this);
   
     this->updateListener.setCallback([&](const State &state) {
-      this->boardWindow->update();
-      if (this->session) {
-        this->Enable(!this->session->isCurrentlyProcessing());
-      }
+      wxThreadEvent evt(ReversiFrameUpdateEvent);
+      wxPostEvent(this, evt);
     });
   }
 
@@ -69,8 +71,10 @@ namespace Reversi::Frontend {
         this->settingsPanel->GetSizer()->Add(this->sessionSettings, 0, wxALL | wxEXPAND);
         this->Layout();
       }
+      this->updateStatistics(this->session->getState());
     } else {
       this->boardWindow->setSession(nullptr);
+      this->SetStatusText("", 0);
     }
   }
 
@@ -98,5 +102,24 @@ namespace Reversi::Frontend {
 
   void ReversiFrame::OnQuit(wxCommandEvent &evt) {
     this->Destroy();
+  }
+
+  void ReversiFrame::OnUpdate(wxThreadEvent &evt) {
+    this->boardWindow->update();
+    if (this->session) {
+      this->Enable(!this->session->isCurrentlyProcessing());
+      this->updateStatistics(this->session->getState());
+    }
+    this->Refresh();
+  }
+
+  void ReversiFrame::updateStatistics(const State &state) {
+    int32_t whiteScore = state.getBoard().getMetric([](int32_t sum, CellState state, Position pos) {
+      return state == CellState::White ? sum + 1 : sum;
+    });
+    int32_t blackScore = state.getBoard().getMetric([](int32_t sum, CellState state, Position pos) {
+      return state == CellState::Black ? sum + 1 : sum;
+    });
+    this->SetStatusText(std::to_string(whiteScore) + "x" + std::to_string(blackScore), 0);
   }
 }
