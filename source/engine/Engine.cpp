@@ -34,28 +34,28 @@ namespace Reversi {
     Position position('A', 1);
     Player player;
     std::tie(player, position) = move;
-    if (this->state.getPlayer() == player && this->isMovePossible(player, position)) {
+    if (this->state.getPlayer() == player && StateHelpers::isMovePossible(this->state, player, position)) {
       this->state.apply(position);
-      if (!this->hasMoves(this->state.getPlayer()) && this->hasMoves(invertPlayer(this->state.getPlayer()))) {
+      if (!StateHelpers::hasMoves(this->state, this->state.getPlayer()) && StateHelpers::hasMoves(this->state, invertPlayer(this->state.getPlayer()))) {
         this->state.next();
       }
       this->stateUpdated();
     }
   }
 
-  bool DefaultGameEngine::hasMoves(Player player) const {
+  bool StateHelpers::hasMoves(const State &state, Player player) {
     std::vector<Position> moves;
-    this->state.getBoard().getMoves(moves, player);
+    state.getBoard().getMoves(moves, player);
     return !moves.empty();
   }
 
-  bool DefaultGameEngine::isMovePossible(Player player, Position position) const {
+  bool StateHelpers::isMovePossible(const State &state, Player player, Position position) {
     std::vector<Position> moves;
-    this->state.getBoard().getMoves(moves, player);
+    state.getBoard().getMoves(moves, player);
     return std::count(moves.begin(), moves.end(), position) > 0;
   }
 
-  bool DefaultGameEngine::isGameFinished() const {
-    return this->hasMoves(Player::White) || this->hasMoves(Player::Black);
+  bool StateHelpers::isGameFinished(const State &state) {
+    return !(StateHelpers::hasMoves(state, Player::White) || StateHelpers::hasMoves(state, Player::Black));
   }
 }

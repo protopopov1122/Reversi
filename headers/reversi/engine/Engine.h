@@ -23,6 +23,13 @@ namespace Reversi {
   
     State state;
   };
+  
+  class StateHelpers {
+   public:
+    static bool hasMoves(const State &, Player);
+    static bool isMovePossible(const State &, Player, Position);
+    static bool isGameFinished(const State &);
+  };
 
   class DefaultGameEngine : public GameEngine {
    public:
@@ -30,10 +37,6 @@ namespace Reversi {
     DefaultGameEngine(const State &);
     void triggerEvent();
     void receiveEvent(const PlayerMove &) override;
-   protected:
-    bool hasMoves(Player) const;
-    bool isMovePossible(Player, Position) const;
-    bool isGameFinished() const;
   };
 }
 

@@ -27,7 +27,9 @@ namespace Reversi::Frontend {
       : DefaultReversiSession::DefaultReversiSession(state) {}
 
     void onClick(Position position) override {
-      this->engine.receiveEvent(PlayerMove(this->getState().getPlayer(), position));
+      if (!StateHelpers::isGameFinished(this->getState())) {
+        this->engine.receiveEvent(PlayerMove(this->getState().getPlayer(), position));
+      }
     }
 
     bool isCurrentlyProcessing() override {
@@ -48,10 +50,12 @@ namespace Reversi::Frontend {
       : DefaultReversiSession::DefaultReversiSession(state), human(human), ai(invertPlayer(human), difficulty, this->engine) {}
 
     void onClick(Position position) override {
-      if (this->getState().getPlayer() == this->human) {
-        this->engine.receiveEvent(PlayerMove(this->getState().getPlayer(), position));
+      if (!StateHelpers::isGameFinished(this->getState())) {
+        if (this->getState().getPlayer() == this->human) {
+          this->engine.receiveEvent(PlayerMove(this->getState().getPlayer(), position));
+        }
+        this->engine.triggerEvent();
       }
-      this->engine.triggerEvent();
     }
 
     bool isCurrentlyProcessing() override {
@@ -88,13 +92,15 @@ namespace Reversi::Frontend {
         aiWhite(Player::White, whiteDifficulty, this->engine, true), aiBlack(Player::Black, blackDifficulty, this->engine, true) {}
    
     void onClick(Position position) override {
-      if (!this->aiWhite.isActive() && !this->aiBlack.isActive()) {
-        if (this->engine.getState().getPlayer() == Player::White) {
-          this->aiWhite.makeMove();
-        } else {
-          this->aiBlack.makeMove();
+      if (!StateHelpers::isGameFinished(this->getState())) {
+        if (!this->aiWhite.isActive() && !this->aiBlack.isActive()) {
+          if (this->engine.getState().getPlayer() == Player::White) {
+            this->aiWhite.makeMove();
+          } else {
+            this->aiBlack.makeMove();
+          }
+          this->engine.triggerEvent();
         }
-        this->engine.triggerEvent();
       }
     }
 

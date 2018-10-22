@@ -51,10 +51,10 @@ namespace Reversi {
       Strategy strat = {reduce, reduce};
       Node root(state);
       auto move = root.build(this->difficulty, strat, this->threads);
+      this->active = false;
       if (move && move.value().first) {
         this->engine.receiveEvent(PlayerMove(state.getPlayer(), move.value().first.value()));
       }
-      this->active = false;
     });
     thread.detach();
   }
