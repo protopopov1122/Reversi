@@ -23,6 +23,7 @@ namespace Reversi::Frontend {
     void OnAIAIGame(wxCommandEvent &);
     void OnUpdate(wxThreadEvent &);
     void OnShowLastMoveChange(wxCommandEvent &);
+    void OnShowPossibleMovesChange(wxCommandEvent &);
     
     void updateStatistics(const State &);
 
@@ -32,6 +33,7 @@ namespace Reversi::Frontend {
     wxPanel *settingsPanel;
     wxWindow *sessionSettings;
     wxCheckBox *showLastMove;
+    wxCheckBox *showPossibleMoves;
   };
 }
 

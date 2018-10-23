@@ -70,7 +70,7 @@ namespace Reversi::Frontend {
       wxPanel *settingsPanel = new wxPanel(parent, id);
       wxFlexGridSizer *sizer = new wxFlexGridSizer(2);
       settingsPanel->SetSizer(sizer);
-      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Human-AI"), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Human-AI"), 0, wxALIGN_CENTER | wxALIGN_LEFT);
       sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, ""));
       sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Difficulty: "), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
       wxSpinCtrl *difficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
@@ -117,7 +117,7 @@ namespace Reversi::Frontend {
       wxPanel *settingsPanel = new wxPanel(parent, id);
       wxFlexGridSizer *sizer = new wxFlexGridSizer(2);
       settingsPanel->SetSizer(sizer);
-      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "AI-AI"), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "AI-AI"), 0, wxALIGN_CENTER | wxALIGN_LEFT);
       sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, ""));
       sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "White difficulty: "), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
       wxSpinCtrl *whiteDifficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,

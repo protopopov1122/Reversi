@@ -13,6 +13,7 @@ namespace Reversi::Frontend {
 
     void setSession(ReversiSession *);
     void showLastMove(bool);
+    void showPossibleMoves(bool);
    private:
     void OnPaintEvent(wxPaintEvent &);
     void OnMouseClick(wxMouseEvent &);
@@ -20,6 +21,7 @@ namespace Reversi::Frontend {
 
     ReversiSession *session;
     bool outlineLastMove;
+    bool outlinePossibleMoves;
   };
 }
 

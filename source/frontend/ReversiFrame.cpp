@@ -33,6 +33,12 @@ namespace Reversi::Frontend {
     this->showLastMove->SetValue(false);
     this->boardWindow->showLastMove(false);
 
+    this->showPossibleMoves = new wxCheckBox(this->settingsPanel, wxID_ANY, "Show possible moves");
+    settingsSizer->Add(this->showPossibleMoves);
+    this->showPossibleMoves->Bind(wxEVT_CHECKBOX, &ReversiFrame::OnShowPossibleMovesChange, this);
+    this->showPossibleMoves->SetValue(false);
+    this->boardWindow->showPossibleMoves(false);
+
     wxMenuBar *menuBar = new wxMenuBar();
     wxMenu *gameMenu = new wxMenu();
     menuBar->Append(gameMenu, "Game");
@@ -128,6 +134,11 @@ namespace Reversi::Frontend {
 
   void ReversiFrame::OnShowLastMoveChange(wxCommandEvent &evt) {
     this->boardWindow->showLastMove(this->showLastMove->GetValue());
+    this->Refresh();
+  }
+
+  void ReversiFrame::OnShowPossibleMovesChange(wxCommandEvent &evt) {
+    this->boardWindow->showPossibleMoves(this->showPossibleMoves->GetValue());
     this->Refresh();
   }
 

@@ -6,7 +6,7 @@
 namespace Reversi::Frontend {
 
   ReversiBoard::ReversiBoard(wxWindow *parent, wxWindowID id, ReversiSession *session)
-    : wxWindow::wxWindow(parent, id), session(session), outlineLastMove(false) {
+    : wxWindow::wxWindow(parent, id), session(session), outlineLastMove(false), outlinePossibleMoves(false) {
     this->SetBackgroundStyle(wxBG_STYLE_PAINT);
     this->Bind(wxEVT_LEFT_DOWN, &ReversiBoard::OnMouseClick, this);
     this->Bind(wxEVT_PAINT, &ReversiBoard::OnPaintEvent, this);
@@ -24,6 +24,11 @@ namespace Reversi::Frontend {
 
   void ReversiBoard::showLastMove(bool show) {
     this->outlineLastMove = show;
+    this->update();
+  }
+
+  void ReversiBoard::showPossibleMoves(bool show) {
+    this->outlinePossibleMoves = show;
     this->update();
   }
 
@@ -49,6 +54,7 @@ namespace Reversi::Frontend {
     wxColour discWhiteColor(255, 255, 255);
     wxColour discBlackColor(0, 0, 0);
     wxColour lastMoveColor(255, 0, 0);
+    wxColour possibleMoveColor(0, 255, 0);
 
     wxBrush backgroundBrush(backgroundColor);
     wxPen cellBoardPen(cellBorderColor);
@@ -56,6 +62,7 @@ namespace Reversi::Frontend {
     wxBrush discWhiteBrush(discWhiteColor);
     wxBrush discBlackBrush(discBlackColor);
     wxPen lastMovePen(lastMoveColor, 3);
+    wxPen possibleMovePen(possibleMoveColor, 3);
 
     // Fill background
     wxSize size = this->GetSize();
@@ -93,6 +100,18 @@ namespace Reversi::Frontend {
         }
       }
 
+      if (this->outlinePossibleMoves) {
+        dc.SetPen(possibleMovePen);
+        dc.SetBrush(*wxTRANSPARENT_BRUSH);
+        std::vector<Position> moves;
+        this->session->getState().getBoard().getMoves(moves, this->session->getState().getPlayer());
+        for (Position move : moves) {
+          wxCoord x = (move.getColumn() - 'A') * cellSize.GetWidth();
+          wxCoord y = (move.getRow() - 1) * cellSize.GetHeight();
+          dc.DrawRectangle(x, y, cellSize.GetWidth(), cellSize.GetHeight());
+        }
+      }
+      
       if (!this->session->getMoves().empty() && this->outlineLastMove) {
         dc.SetPen(lastMovePen);
         dc.SetBrush(*wxTRANSPARENT_BRUSH);
