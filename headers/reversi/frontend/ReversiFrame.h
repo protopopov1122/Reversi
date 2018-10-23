@@ -19,6 +19,7 @@ namespace Reversi::Frontend {
     void OnQuit(wxCommandEvent &);
     void OnHumanHumanGame(wxCommandEvent &);
     void OnHumanAIGame(wxCommandEvent &);
+    void OnAIHumanGame(wxCommandEvent &);
     void OnAIAIGame(wxCommandEvent &);
     void OnUpdate(wxThreadEvent &);
     

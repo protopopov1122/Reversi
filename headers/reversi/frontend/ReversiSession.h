@@ -35,6 +35,7 @@ namespace Reversi::Frontend {
 
     static std::unique_ptr<ReversiSessionFactory> Human_Human;
     static std::unique_ptr<ReversiSessionFactory> Human_AI;
+    static std::unique_ptr<ReversiSessionFactory> AI_Human;
     static std::unique_ptr<ReversiSessionFactory> AI_AI;
   };
 }

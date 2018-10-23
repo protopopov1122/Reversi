@@ -37,6 +37,9 @@ namespace Reversi::Frontend {
     wxWindowID idHumanAI = wxNewId();
     wxMenuItem *humanAIItem = gameMenu->Append(idHumanAI, "Human-AI");
     this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnHumanAIGame, this, idHumanAI);
+    wxWindowID idAIHuman = wxNewId();
+    wxMenuItem *AIHumanItem = gameMenu->Append(idAIHuman, "AI-Human");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnAIHumanGame, this, idAIHuman);
     wxWindowID idAIAI = wxNewId();
     wxMenuItem *AIAIIem = gameMenu->Append(idAIAI, "AI-AI");
     this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnAIAIGame, this, idAIAI);
@@ -94,6 +97,10 @@ namespace Reversi::Frontend {
 
   void ReversiFrame::OnHumanAIGame(wxCommandEvent &evt) {
     this->newSession(*ReversiSessionFactory::Human_AI);
+  }
+
+  void ReversiFrame::OnAIHumanGame(wxCommandEvent &evt) {
+    this->newSession(*ReversiSessionFactory::AI_Human);
   }
 
   void ReversiFrame::OnAIAIGame(wxCommandEvent &evt) {
