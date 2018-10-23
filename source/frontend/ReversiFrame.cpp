@@ -22,44 +22,8 @@ namespace Reversi::Frontend {
     this->boardWindow = new ReversiBoard(panel, wxID_ANY);
     sizer->Add(this->boardWindow, 1, wxALL | wxEXPAND);
 
-    this->settingsPanel = new wxPanel(this, wxID_ANY);
-    frameSizer->Add(this->settingsPanel, 0, wxALL | wxEXPAND);
-    wxBoxSizer *settingsSizer = new wxBoxSizer(wxVERTICAL);
-    this->settingsPanel->SetSizer(settingsSizer);
-
-    this->showLastMove = new wxCheckBox(this->settingsPanel, wxID_ANY, "Show last move");
-    settingsSizer->Add(this->showLastMove);
-    this->showLastMove->Bind(wxEVT_CHECKBOX, &ReversiFrame::OnShowLastMoveChange, this);
-    this->showLastMove->SetValue(false);
-    this->boardWindow->showLastMove(false);
-
-    this->showPossibleMoves = new wxCheckBox(this->settingsPanel, wxID_ANY, "Show possible moves");
-    settingsSizer->Add(this->showPossibleMoves);
-    this->showPossibleMoves->Bind(wxEVT_CHECKBOX, &ReversiFrame::OnShowPossibleMovesChange, this);
-    this->showPossibleMoves->SetValue(false);
-    this->boardWindow->showPossibleMoves(false);
-
-    wxMenuBar *menuBar = new wxMenuBar();
-    wxMenu *gameMenu = new wxMenu();
-    menuBar->Append(gameMenu, "Game");
-
-    wxWindowID idHumanHuman = wxNewId();
-    wxMenuItem *humanHumanItem = gameMenu->Append(idHumanHuman, "Human-Human");
-    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnHumanHumanGame, this, idHumanHuman);
-    wxWindowID idHumanAI = wxNewId();
-    wxMenuItem *humanAIItem = gameMenu->Append(idHumanAI, "Human-AI");
-    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnHumanAIGame, this, idHumanAI);
-    wxWindowID idAIHuman = wxNewId();
-    wxMenuItem *AIHumanItem = gameMenu->Append(idAIHuman, "AI-Human");
-    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnAIHumanGame, this, idAIHuman);
-    wxWindowID idAIAI = wxNewId();
-    wxMenuItem *AIAIIem = gameMenu->Append(idAIAI, "AI-AI");
-    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnAIAIGame, this, idAIAI);
-
-    gameMenu->AppendSeparator();
-    wxMenuItem *quitItem = gameMenu->Append(wxID_EXIT, "Quit");
-    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnQuit, this, wxID_EXIT);
-    this->SetMenuBar(menuBar);
+    this->initSettings(frameSizer);
+    this->initMenu();
     
     this->CreateStatusBar(1);
     this->Bind(ReversiFrameUpdateEvent, &ReversiFrame::OnUpdate, this);
@@ -101,6 +65,49 @@ namespace Reversi::Frontend {
     board.putDisc(Position('E', 5), Player::Black);
     State state(board, Player::Black);
     this->newSession(factory, state);
+  }
+
+  void ReversiFrame::initMenu() {
+    wxMenuBar *menuBar = new wxMenuBar();
+    wxMenu *gameMenu = new wxMenu();
+    menuBar->Append(gameMenu, "Game");
+
+    wxWindowID idHumanHuman = wxNewId();
+    wxMenuItem *humanHumanItem = gameMenu->Append(idHumanHuman, "Human-Human");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnHumanHumanGame, this, idHumanHuman);
+    wxWindowID idHumanAI = wxNewId();
+    wxMenuItem *humanAIItem = gameMenu->Append(idHumanAI, "Human-AI");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnHumanAIGame, this, idHumanAI);
+    wxWindowID idAIHuman = wxNewId();
+    wxMenuItem *AIHumanItem = gameMenu->Append(idAIHuman, "AI-Human");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnAIHumanGame, this, idAIHuman);
+    wxWindowID idAIAI = wxNewId();
+    wxMenuItem *AIAIIem = gameMenu->Append(idAIAI, "AI-AI");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnAIAIGame, this, idAIAI);
+
+    gameMenu->AppendSeparator();
+    wxMenuItem *quitItem = gameMenu->Append(wxID_EXIT, "Quit");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnQuit, this, wxID_EXIT);
+    this->SetMenuBar(menuBar);
+  }
+
+  void ReversiFrame::initSettings(wxSizer *frameSizer) {
+    this->settingsPanel = new wxPanel(this, wxID_ANY);
+    frameSizer->Add(this->settingsPanel, 0, wxALL | wxEXPAND);
+    wxBoxSizer *settingsSizer = new wxBoxSizer(wxVERTICAL);
+    this->settingsPanel->SetSizer(settingsSizer);
+
+    this->showLastMove = new wxCheckBox(this->settingsPanel, wxID_ANY, "Show last move");
+    settingsSizer->Add(this->showLastMove);
+    this->showLastMove->Bind(wxEVT_CHECKBOX, &ReversiFrame::OnShowLastMoveChange, this);
+    this->showLastMove->SetValue(false);
+    this->boardWindow->showLastMove(false);
+
+    this->showPossibleMoves = new wxCheckBox(this->settingsPanel, wxID_ANY, "Show possible moves");
+    settingsSizer->Add(this->showPossibleMoves);
+    this->showPossibleMoves->Bind(wxEVT_CHECKBOX, &ReversiFrame::OnShowPossibleMovesChange, this);
+    this->showPossibleMoves->SetValue(false);
+    this->boardWindow->showPossibleMoves(false);
   }
 
   void ReversiFrame::OnHumanHumanGame(wxCommandEvent &evt) {

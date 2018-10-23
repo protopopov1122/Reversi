@@ -16,6 +16,9 @@ namespace Reversi::Frontend {
     void newSession(ReversiSessionFactory &, const State &);
     void newSession(ReversiSessionFactory &);
    private:
+    void initMenu();
+    void initSettings(wxSizer *);
+
     void OnQuit(wxCommandEvent &);
     void OnHumanHumanGame(wxCommandEvent &);
     void OnHumanAIGame(wxCommandEvent &);
