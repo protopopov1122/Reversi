@@ -4,6 +4,7 @@
 #include "reversi/frontend/base.h"
 #include "reversi/frontend/ReversiSession.h"
 #include "reversi/frontend/ReversiBoard.h"
+#include <wx/listctrl.h>
 #include <functional>
 
 namespace Reversi::Frontend {
@@ -18,6 +19,7 @@ namespace Reversi::Frontend {
    private:
     void initMenu();
     void initSettings(wxSizer *);
+    void initMoveList();
 
     void OnQuit(wxCommandEvent &);
     void OnHumanHumanGame(wxCommandEvent &);
@@ -29,6 +31,7 @@ namespace Reversi::Frontend {
     void OnShowPossibleMovesChange(wxCommandEvent &);
     
     void updateStatistics(const State &);
+    void showMoves(const std::vector<PlayerMove> &);
 
     std::unique_ptr<DefaultReversiSession> session;
     FunctionEventListener<State> updateListener;
@@ -37,6 +40,7 @@ namespace Reversi::Frontend {
     wxWindow *sessionSettings;
     wxCheckBox *showLastMove;
     wxCheckBox *showPossibleMoves;
+    wxListCtrl *moveList;
   };
 }
 

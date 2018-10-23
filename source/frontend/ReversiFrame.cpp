@@ -24,6 +24,7 @@ namespace Reversi::Frontend {
 
     this->initSettings(frameSizer);
     this->initMenu();
+    this->initMoveList();
     
     this->CreateStatusBar(1);
     this->Bind(ReversiFrameUpdateEvent, &ReversiFrame::OnUpdate, this);
@@ -41,13 +42,14 @@ namespace Reversi::Frontend {
       this->sessionSettings->Destroy();
       this->sessionSettings = nullptr;
     }
+    this->moveList->DeleteAllItems();
     this->session = factory.createSession(state);
     if (this->session) {
       this->session->getEngine().addEventListener(this->updateListener);
       this->boardWindow->setSession(this->session.get());
       this->sessionSettings = this->session->getSettings(this->settingsPanel, wxID_ANY);
       if (this->sessionSettings) {
-        this->settingsPanel->GetSizer()->Add(this->sessionSettings, 0, wxALL | wxEXPAND);
+        this->settingsPanel->GetSizer()->Insert(2, this->sessionSettings, 0, wxALL | wxEXPAND);
         this->Layout();
       }
       this->updateStatistics(this->session->getState());
@@ -110,6 +112,14 @@ namespace Reversi::Frontend {
     this->boardWindow->showPossibleMoves(false);
   }
 
+  void ReversiFrame::initMoveList() {
+    this->moveList = new wxListCtrl(this->settingsPanel, wxID_ANY, wxDefaultPosition, wxDefaultSize, wxLC_REPORT);
+    this->settingsPanel->GetSizer()->Add(this->moveList, 1, wxALL | wxEXPAND);
+    this->moveList->InsertColumn(0, "#");
+    this->moveList->InsertColumn(1, "Player");
+    this->moveList->InsertColumn(2, "Move");
+  }
+
   void ReversiFrame::OnHumanHumanGame(wxCommandEvent &evt) {
     this->newSession(*ReversiSessionFactory::Human_Human);
   }
@@ -132,8 +142,10 @@ namespace Reversi::Frontend {
 
   void ReversiFrame::OnUpdate(wxThreadEvent &evt) {
     this->boardWindow->update();
+    this->moveList->DeleteAllItems();
     if (this->session) {
       this->Enable(!this->session->isCurrentlyProcessing());
+      this->showMoves(this->session->getMoves());
       this->updateStatistics(this->session->getState());
     }
     this->Refresh();
@@ -157,5 +169,16 @@ namespace Reversi::Frontend {
       return state == CellState::Black ? sum + 1 : sum;
     });
     this->SetStatusText(std::to_string(whiteScore) + "x" + std::to_string(blackScore), 0);
+  }
+
+  void ReversiFrame::showMoves(const std::vector<PlayerMove> &moves) {
+    for (std::size_t i = 0; i < moves.size(); i++) {
+      wxListItem item;
+      this->moveList->InsertItem(i, item);
+      this->moveList->SetItem(i, 0, std::to_string(i + 1));
+      this->moveList->SetItem(i, 1, moves.at(i).first == Player::White ? "White" : "Black");
+      Position move = moves.at(i).second;
+      this->moveList->SetItem(i, 2, std::string(1, move.getColumn()) + std::to_string(move.getRow()));
+    }
   }
 }
