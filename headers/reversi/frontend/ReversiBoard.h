@@ -2,6 +2,7 @@
 #define REVERSI_FRONTEND_REVERSI_BOARD_H_
 
 #include "reversi/frontend/base.h"
+#include "reversi/frontend/BoardRender.h"
 #include "reversi/frontend/ReversiSession.h"
 
 namespace Reversi::Frontend {
@@ -20,6 +21,7 @@ namespace Reversi::Frontend {
     void render(wxDC &);
 
     ReversiSession *session;
+    ReversiDefaultBoardRender renderer;
     bool outlineLastMove;
     bool outlinePossibleMoves;
   };
