@@ -6,7 +6,7 @@
 namespace Reversi::Frontend {
 
   ReversiBoard::ReversiBoard(wxWindow *parent, wxWindowID id, ReversiSession *session)
-    : wxWindow::wxWindow(parent, id), session(session) {
+    : wxWindow::wxWindow(parent, id), session(session), outlineLastMove(false) {
     this->SetBackgroundStyle(wxBG_STYLE_PAINT);
     this->Bind(wxEVT_LEFT_DOWN, &ReversiBoard::OnMouseClick, this);
     this->Bind(wxEVT_PAINT, &ReversiBoard::OnPaintEvent, this);
@@ -19,6 +19,11 @@ namespace Reversi::Frontend {
 
   void ReversiBoard::setSession(ReversiSession *session) {
     this->session = session;
+    this->update();
+  }
+
+  void ReversiBoard::showLastMove(bool show) {
+    this->outlineLastMove = show;
     this->update();
   }
 
@@ -43,12 +48,14 @@ namespace Reversi::Frontend {
     wxColour discBorderColor(0, 0, 0);
     wxColour discWhiteColor(255, 255, 255);
     wxColour discBlackColor(0, 0, 0);
+    wxColour lastMoveColor(255, 0, 0);
 
     wxBrush backgroundBrush(backgroundColor);
     wxPen cellBoardPen(cellBorderColor);
     wxPen discBorderPen(discBorderColor);
     wxBrush discWhiteBrush(discWhiteColor);
     wxBrush discBlackBrush(discBlackColor);
+    wxPen lastMovePen(lastMoveColor, 3);
 
     // Fill background
     wxSize size = this->GetSize();
@@ -66,7 +73,7 @@ namespace Reversi::Frontend {
       dc.DrawLine(0, y, size.GetWidth(), y);
     }
 
-    // Draw discs
+    // Draw discs and moves
     if (this->session) {
       dc.SetPen(discBorderPen);
       const Board &board = this->session->getState().getBoard();
@@ -84,6 +91,15 @@ namespace Reversi::Frontend {
             dc.DrawEllipse(x, y, cellSize.GetWidth(), cellSize.GetHeight());
           }
         }
+      }
+
+      if (!this->session->getMoves().empty() && this->outlineLastMove) {
+        dc.SetPen(lastMovePen);
+        dc.SetBrush(*wxTRANSPARENT_BRUSH);
+        PlayerMove move = this->session->getMoves().back();
+        wxCoord x = (move.second.getColumn() - 'A') * cellSize.GetWidth();
+        wxCoord y = (move.second.getRow() - 1) * cellSize.GetHeight();
+        dc.DrawRectangle(x, y, cellSize.GetWidth(), cellSize.GetHeight());
       }
     }
   }

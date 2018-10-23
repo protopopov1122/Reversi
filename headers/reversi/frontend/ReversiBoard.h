@@ -12,12 +12,14 @@ namespace Reversi::Frontend {
     void update();
 
     void setSession(ReversiSession *);
+    void showLastMove(bool);
    private:
     void OnPaintEvent(wxPaintEvent &);
     void OnMouseClick(wxMouseEvent &);
     void render(wxDC &);
 
     ReversiSession *session;
+    bool outlineLastMove;
   };
 }
 

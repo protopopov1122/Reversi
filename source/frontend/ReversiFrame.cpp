@@ -10,7 +10,7 @@ namespace Reversi::Frontend {
   wxDEFINE_EVENT(ReversiFrameUpdateEvent, wxThreadEvent);
 
   ReversiFrame::ReversiFrame(std::string title)
-     : wxFrame::wxFrame(nullptr, wxID_DEFAULT, title, wxDefaultPosition, wxSize(600, 600)),
+     : wxFrame::wxFrame(nullptr, wxID_DEFAULT, title, wxDefaultPosition, wxSize(700, 600)),
        session(nullptr), sessionSettings(nullptr) {
     wxBoxSizer *frameSizer = new wxBoxSizer(wxHORIZONTAL);
     this->SetSizer(frameSizer);
@@ -26,6 +26,12 @@ namespace Reversi::Frontend {
     frameSizer->Add(this->settingsPanel, 0, wxALL | wxEXPAND);
     wxBoxSizer *settingsSizer = new wxBoxSizer(wxVERTICAL);
     this->settingsPanel->SetSizer(settingsSizer);
+
+    this->showLastMove = new wxCheckBox(this->settingsPanel, wxID_ANY, "Show last move");
+    settingsSizer->Add(this->showLastMove);
+    this->showLastMove->Bind(wxEVT_CHECKBOX, &ReversiFrame::OnShowLastMoveChange, this);
+    this->showLastMove->SetValue(false);
+    this->boardWindow->showLastMove(false);
 
     wxMenuBar *menuBar = new wxMenuBar();
     wxMenu *gameMenu = new wxMenu();
@@ -117,6 +123,11 @@ namespace Reversi::Frontend {
       this->Enable(!this->session->isCurrentlyProcessing());
       this->updateStatistics(this->session->getState());
     }
+    this->Refresh();
+  }
+
+  void ReversiFrame::OnShowLastMoveChange(wxCommandEvent &evt) {
+    this->boardWindow->showLastMove(this->showLastMove->GetValue());
     this->Refresh();
   }
 

@@ -5,6 +5,7 @@
 #include "reversi/engine/AI.h"
 #include "reversi/engine/Tree.h"
 #include <algorithm>
+#include <vector>
 
 
 namespace Reversi {
@@ -18,10 +19,12 @@ namespace Reversi {
     virtual ~GameEngine() = default;
     void setState(const State &);
     const State &getState() const;
+    const std::vector<PlayerMove> &getMoves() const;
    protected:
     void stateUpdated();
   
     State state;
+    std::vector<PlayerMove> moves;
   };
   
   class StateHelpers {

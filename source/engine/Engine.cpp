@@ -17,6 +17,10 @@ namespace Reversi {
     return this->state;
   }
 
+  const std::vector<PlayerMove> &GameEngine::getMoves() const {
+    return this->moves;
+  }
+
   void GameEngine::stateUpdated() {
     this->triggerEvent(this->state);
   }
@@ -35,6 +39,7 @@ namespace Reversi {
     Player player;
     std::tie(player, position) = move;
     if (this->state.getPlayer() == player && StateHelpers::isMovePossible(this->state, player, position)) {
+      this->moves.push_back(move);
       this->state.apply(position);
       if (!StateHelpers::hasMoves(this->state, this->state.getPlayer()) && StateHelpers::hasMoves(this->state, invertPlayer(this->state.getPlayer()))) {
         this->state.next();
