@@ -165,6 +165,20 @@ namespace Reversi {
     }
   }
 
+  bool Board::operator<(const Board &other) const {
+    if (this->white < other.white) {
+      return true;
+    } else if (this->white == other.white) {
+      return this->black < other.black;
+    } else {
+      return false;
+    }
+  }
+
+  bool Board::operator==(const Board &other) const {
+    return this->white == other.white && this->black == other.black;
+  }
+
   std::ostream &operator<<(std::ostream &os, const Board &board) {
     for (char r = 1; r <= 8; r++) {
       if (r > 1) {

@@ -28,6 +28,8 @@ namespace Reversi {
       int32_t getMetric(BoardReduceFunction) const;
       int32_t getPlainMetric() const;
 
+      bool operator<(const Board &) const;
+      bool operator==(const Board &) const;
       friend std::ostream &operator<<(std::ostream &, const Board &);
     private:
       std::size_t position_to_index(Position) const;

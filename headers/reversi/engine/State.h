@@ -16,6 +16,8 @@ namespace Reversi {
     Player getPlayer() const;
     bool apply(Position);
     void next();
+    bool operator<(const State &) const;
+    bool operator==(const State &) const;
    private:
     Board board;
     Player player;

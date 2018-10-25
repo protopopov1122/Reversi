@@ -36,4 +36,18 @@ namespace Reversi {
   void State::next() {
     this->player = invertPlayer(this->player);
   }
+
+  bool State::operator<(const State &other) const {
+    if (this->board < other.board) {
+      return true;
+    } else if (this->board == other.board) {
+      return static_cast<int>(this->player) < static_cast<int>(other.player);
+    } else {
+      return false;
+    }
+  }
+
+  bool State::operator==(const State &other) const {
+    return this->board == other.board && this->player == other.player;
+  }
 }
