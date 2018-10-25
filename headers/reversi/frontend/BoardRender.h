@@ -20,6 +20,8 @@ namespace Reversi::Frontend {
     Position getPosition(const wxSize &, wxPoint) override;
     void render(wxDC &, const wxSize &, const State *) override;
     void highlight(wxDC &, const wxSize &, const std::vector<Position> &) override;
+   private:
+    wxRect getBoard(const wxSize &);
   };
 }
 
