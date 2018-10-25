@@ -57,6 +57,8 @@ namespace Reversi::Frontend {
       if (!StateHelpers::isGameFinished(this->getState())) {
         if (this->getState().getPlayer() == this->human) {
           this->engine.receiveEvent(PlayerMove(this->getState().getPlayer(), position));
+        } else {
+          this->engine.triggerEvent();
         }
       }
     }
