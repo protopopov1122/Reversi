@@ -10,8 +10,9 @@ namespace Reversi::Frontend {
   wxDEFINE_EVENT(ReversiFrameUpdateEvent, wxThreadEvent);
 
   ReversiFrame::ReversiFrame(std::string title)
-     : wxFrame::wxFrame(nullptr, wxID_DEFAULT, title, wxDefaultPosition, wxSize(700, 600)),
+     : wxFrame::wxFrame(nullptr, wxID_DEFAULT, title, wxDefaultPosition, wxSize(650, 550)),
        session(nullptr), sessionSettings(nullptr) {
+    this->SetMinSize(this->GetSize());
     wxBoxSizer *frameSizer = new wxBoxSizer(wxHORIZONTAL);
     this->SetSizer(frameSizer);
     wxPanel *panel = new wxPanel(this, wxID_ANY);
