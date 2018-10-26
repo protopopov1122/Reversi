@@ -29,6 +29,8 @@ namespace Reversi::Frontend {
     void OnUpdate(wxThreadEvent &);
     void OnShowLastMoveChange(wxCommandEvent &);
     void OnShowPossibleMovesChange(wxCommandEvent &);
+	void OnResize(wxSizeEvent &);
+	void OnMaximize(wxMaximizeEvent &);
     
     void updateStatistics(const State &);
     void showMoves(const std::vector<PlayerMove> &);

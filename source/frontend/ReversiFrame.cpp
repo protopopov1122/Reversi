@@ -29,6 +29,8 @@ namespace Reversi::Frontend {
     
     this->CreateStatusBar(2);
     this->Bind(ReversiFrameUpdateEvent, &ReversiFrame::OnUpdate, this);
+	this->Bind(wxEVT_SIZE, &ReversiFrame::OnResize, this);
+	this->Bind(wxEVT_MAXIMIZE, &ReversiFrame::OnMaximize, this);
   
     this->updateListener.setCallback([this](const State &state) {
       wxQueueEvent(this, new wxThreadEvent(ReversiFrameUpdateEvent));
@@ -52,6 +54,8 @@ namespace Reversi::Frontend {
         this->settingsPanel->GetSizer()->Insert(2, this->sessionSettings, 0, wxALL | wxEXPAND);
         this->Layout();
       }
+	  this->boardWindow->update();
+	  this->Refresh();
       this->updateStatistics(this->session->getState());
     } else {
       this->boardWindow->setSession(nullptr);
@@ -160,6 +164,20 @@ namespace Reversi::Frontend {
   void ReversiFrame::OnShowPossibleMovesChange(wxCommandEvent &evt) {
     this->boardWindow->showPossibleMoves(this->showPossibleMoves->GetValue());
     this->Refresh();
+  }
+  
+  void ReversiFrame::OnResize(wxSizeEvent &evt) {
+	 this->Layout();
+	 this->Refresh();
+	 this->moveList->ClearBackground();
+	 this->moveList->Update();
+  }
+ 
+  void ReversiFrame::OnMaximize(wxMaximizeEvent &evt) {
+	 this->Layout();
+	 this->Refresh();
+	 this->moveList->ClearBackground();
+	 this->moveList->Update();
   }
 
   void ReversiFrame::updateStatistics(const State &state) {
