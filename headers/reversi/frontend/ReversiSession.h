@@ -22,12 +22,14 @@ namespace Reversi::Frontend {
     GameEngine &getEngine();
     const State &getState() const override;
     const std::vector<PlayerMove> &getMoves() const override;
+    bool isClosing();
     virtual wxWindow *getSettings(wxWindow *, wxWindowID) = 0;
     virtual bool isCurrentlyProcessing() = 0;
 
     static const unsigned int DEFAULT_AI_DIFFICULTY;
    protected:
     DefaultGameEngine engine;
+    bool closed;
   };
 
   class ReversiSessionFactory {

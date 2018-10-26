@@ -26,12 +26,11 @@ namespace Reversi::Frontend {
     this->initMenu();
     this->initMoveList();
     
-    this->CreateStatusBar(1);
+    this->CreateStatusBar(2);
     this->Bind(ReversiFrameUpdateEvent, &ReversiFrame::OnUpdate, this);
   
-    this->updateListener.setCallback([&](const State &state) {
-      wxThreadEvent evt(ReversiFrameUpdateEvent);
-      wxPostEvent(this, evt);
+    this->updateListener.setCallback([this](const State &state) {
+      wxQueueEvent(this, new wxThreadEvent(ReversiFrameUpdateEvent));
     });
   }
 
@@ -56,6 +55,7 @@ namespace Reversi::Frontend {
     } else {
       this->boardWindow->setSession(nullptr);
       this->SetStatusText("", 0);
+      this->SetStatusText("", 1);
     }
   }
 
@@ -169,6 +169,19 @@ namespace Reversi::Frontend {
       return state == CellState::Black ? sum + 1 : sum;
     });
     this->SetStatusText(std::to_string(whiteScore) + "x" + std::to_string(blackScore), 0);
+    this->SetStatusText("", 1);
+    if (this->session->isClosing()) {
+      if (whiteScore > blackScore) {
+        wxMessageBox("White won!", "", wxOK | wxICON_INFORMATION);
+        this->SetStatusText("White won!", 1);
+      } else if (whiteScore == blackScore) {
+        wxMessageBox("Draw", "", wxOK | wxICON_INFORMATION);
+        this->SetStatusText("Draw", 1);
+      } else {
+        wxMessageBox("Black won!", "", wxOK | wxICON_INFORMATION);
+        this->SetStatusText("Black won!", 1);
+      }
+    }
   }
 
   void ReversiFrame::showMoves(const std::vector<PlayerMove> &moves) {

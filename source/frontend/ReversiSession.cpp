@@ -6,10 +6,10 @@ namespace Reversi::Frontend {
 
   const unsigned int DefaultReversiSession::DEFAULT_AI_DIFFICULTY = 5;
 
-  DefaultReversiSession::DefaultReversiSession() {}
+  DefaultReversiSession::DefaultReversiSession() : closed(false) {}
 
   DefaultReversiSession::DefaultReversiSession(const State &state)
-    : engine(state) {}
+    : engine(state), closed(false) {}
   
   GameEngine &DefaultReversiSession::getEngine() {
     return this->engine;
@@ -21,6 +21,15 @@ namespace Reversi::Frontend {
 
   const std::vector<PlayerMove> &DefaultReversiSession::getMoves() const {
     return this->engine.getMoves();
+  }
+
+  bool DefaultReversiSession::isClosing() {
+    if (!this->closed && StateHelpers::isGameFinished(this->getState())) {
+      this->closed = true;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   class ReversiHumanHumanSession : public DefaultReversiSession {
