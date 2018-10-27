@@ -63,4 +63,13 @@ namespace Reversi {
   bool StateHelpers::isGameFinished(const State &state) {
     return !(StateHelpers::hasMoves(state, Player::White) || StateHelpers::hasMoves(state, Player::Black));
   }
+
+  State StateHelpers::getDefaultInitialState() {
+    Board board;
+    board.putDisc(Position('E', 4), Player::White);
+    board.putDisc(Position('D', 5), Player::White);
+    board.putDisc(Position('D', 4), Player::Black);
+    board.putDisc(Position('E', 5), Player::Black);
+    return State(board, Player::Black);
+  }
 }

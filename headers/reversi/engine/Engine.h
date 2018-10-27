@@ -32,6 +32,7 @@ namespace Reversi {
     static bool hasMoves(const State &, Player);
     static bool isMovePossible(const State &, Player, Position);
     static bool isGameFinished(const State &);
+    static State getDefaultInitialState();
   };
 
   class DefaultGameEngine : public GameEngine {

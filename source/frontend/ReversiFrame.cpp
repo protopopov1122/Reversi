@@ -54,8 +54,8 @@ namespace Reversi::Frontend {
         this->settingsPanel->GetSizer()->Insert(2, this->sessionSettings, 0, wxALL | wxEXPAND);
         this->Layout();
       }
-	  this->boardWindow->update();
-	  this->Refresh();
+      this->boardWindow->update();
+      this->Refresh();
       this->updateStatistics(this->session->getState());
     } else {
       this->boardWindow->setSession(nullptr);
@@ -65,13 +65,7 @@ namespace Reversi::Frontend {
   }
 
   void ReversiFrame::newSession(ReversiSessionFactory &factory) {
-    Board board;
-    board.putDisc(Position('E', 4), Player::White);
-    board.putDisc(Position('D', 5), Player::White);
-    board.putDisc(Position('D', 4), Player::Black);
-    board.putDisc(Position('E', 5), Player::Black);
-    State state(board, Player::Black);
-    this->newSession(factory, state);
+    this->newSession(factory, StateHelpers::getDefaultInitialState());
   }
 
   void ReversiFrame::initMenu() {

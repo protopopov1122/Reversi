@@ -8,7 +8,6 @@ namespace Reversi::Frontend {
   class ReversiApp : public wxApp {
    public:
     bool OnInit() override;
-    int OnExit() override;
   };
 }
 

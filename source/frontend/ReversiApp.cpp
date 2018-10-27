@@ -8,10 +8,6 @@ namespace Reversi::Frontend {
     frame->Show(true);
     return true;
   }
-
-  int ReversiApp::OnExit() {
-    return 0;
-  }
 }
 
 wxIMPLEMENT_APP(Reversi::Frontend::ReversiApp);
