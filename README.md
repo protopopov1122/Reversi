@@ -14,4 +14,4 @@ simple mechanics and interesting gameplay
 
 ### Author & License
 Author: Jevgēnijs Protopopovs \
-Currently project has no license, but it will be licensed under some permissive license
+Project is licensed under the terms of the 3-clause BSD license. See LICENSE
