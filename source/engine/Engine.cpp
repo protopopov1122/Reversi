@@ -66,10 +66,10 @@ namespace Reversi {
 
   State StateHelpers::getDefaultInitialState() {
     Board board;
-    board.putDisc(Position('E', 4), Player::White);
-    board.putDisc(Position('D', 5), Player::White);
-    board.putDisc(Position('D', 4), Player::Black);
-    board.putDisc(Position('E', 5), Player::Black);
+    board.putDisc(Position('E', 5), Player::White);
+    board.putDisc(Position('D', 4), Player::White);
+    board.putDisc(Position('D', 5), Player::Black);
+    board.putDisc(Position('E', 4), Player::Black);
     return State(board, Player::Black);
   }
 }

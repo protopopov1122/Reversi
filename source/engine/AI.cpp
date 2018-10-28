@@ -72,7 +72,7 @@ namespace Reversi {
       {20, -3, 11, 8, 8, 11, -3, 20}
     };
     int32_t total_sum = state.getBoard().getMetric([&](int32_t sum, CellState state, Position position) {
-      return sum + static_cast<int>(state) * WEIGHTS[position.getColumn() - 'A'][position.getRow() - 1];
+      return sum + static_cast<int>(state); // * WEIGHTS[position.getColumn() - 'A'][position.getRow() - 1];
     });
 
     int32_t white_discs = state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
@@ -89,7 +89,7 @@ namespace Reversi {
         return sum;
       }
     });
-    float parity = 100.0f * (white_discs - black_discs) / (white_discs + black_discs);
+    float parity = static_cast<float>(white_discs - black_discs) / (white_discs + black_discs);
     std::vector<Position> moves;
     state.getBoard().getMoves(moves, Player::White);
     int32_t white_moves = moves.size();
@@ -98,7 +98,7 @@ namespace Reversi {
     int32_t black_moves = moves.size();
     float mobility = 0;
     if (white_moves != black_moves) {
-      mobility = 100.0f * (white_moves - black_moves) / (white_moves + black_moves);
+      mobility = static_cast<float>(white_moves - black_moves) / (white_moves + black_moves);
     }
 
     int32_t white_corners = state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
@@ -122,10 +122,10 @@ namespace Reversi {
 
     float corner_heuristic = 0;
     if (white_corners != black_corners) {
-      corner_heuristic = 100.0f * (white_corners - black_corners) / (white_corners + black_corners);
+      corner_heuristic = static_cast<float>(white_corners - black_corners) / (white_corners + black_corners);
     }
 
-    float total = (10 * parity) + (802 * corner_heuristic) + (79 * mobility) + (10 * total_sum);
+    float total = 50 * parity + 100 * corner_heuristic + 10 * mobility;
     return static_cast<int32_t>(total);
   }
 }
