@@ -19,7 +19,7 @@ namespace Reversi {
   }
 
   void NodeCache::put(std::shared_ptr<Node> node) {
-    std::lock_guard<std::shared_mutex> lock(this->cacheMutex);
+    std::scoped_lock<std::shared_mutex> lock(this->cacheMutex);
     if (node &&
       (this->cache.count(node->getState()) == 0 ||
       this->cache[node->getState()]->getDepth() < node->getDepth())) {
@@ -62,20 +62,20 @@ namespace Reversi {
 
   std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, bool useCache) {
     this->depth = depth;
-    NodeCache cache;
-    this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, useCache ? &cache : nullptr);
+    std::shared_ptr<NodeCache> cache = std::make_shared<NodeCache>();
+    this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, useCache ? cache : nullptr);
     return this->optimal;
   }
 
   std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, FixedThreadPool &pool, bool useCache) {
     this->depth = depth;
-    NodeCache cache;
-    this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, pool, useCache ? &cache : nullptr);
+    std::shared_ptr<NodeCache> cache = std::make_shared<NodeCache>();
+    this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, pool, useCache ? cache : nullptr);
     return this->optimal;
   }
 
   std::pair<int32_t, Node *> Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy,
-    NodeCache *cache) {
+    std::shared_ptr<NodeCache> cache) {
     this->depth = depth;
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (depth == 0) {
@@ -124,7 +124,7 @@ namespace Reversi {
   }
 
   std::pair<int32_t, Node *> Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, FixedThreadPool &pool,
-    NodeCache *cache) {
+    std::shared_ptr<NodeCache> cache) {
     this->depth = depth;
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (depth == 0) {
@@ -186,7 +186,7 @@ namespace Reversi {
     return std::make_pair(this->metric, this);
   }
 
-  std::pair<int32_t, Node *> Node::noMoves(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, NodeCache *cache) {
+  std::pair<int32_t, Node *> Node::noMoves(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (abortOnNoMoves) {
       this->metric = color * score_assess(this->state);
@@ -197,13 +197,13 @@ namespace Reversi {
       std::shared_ptr<Node> child = std::make_shared<Node>(base);
       this->metric = -child->traverse(depth - 1, -beta, -alpha, -color, true, strategy, cache).first;
       this->optimal = std::make_pair(Move(), child.get());
-      this->children.push_back(std::make_pair(Move(), std::move(child))); // TODO
+      this->children.push_back(std::make_pair(Move(), child)); // TODO
       return std::make_pair(this->metric, this->optimal.value().second);
     }
   }
 
   std::optional<std::pair<Position, Node *>> Node::addChild(Position position, const State &base, std::size_t depth, int32_t alpha, int32_t beta, int color, const Strategy &strategy,
-    NodeCache *cache) {
+    std::shared_ptr<NodeCache> cache) {
     std::optional<std::pair<Position, Node *>> best;
     std::shared_ptr<Node> child = std::make_shared<Node>(base);
     int32_t child_metric = -child->traverse(depth - 1, -beta, -alpha, -color, false, strategy, cache).first;
@@ -219,7 +219,7 @@ namespace Reversi {
   }
 
   void Node::generateFutures(std::vector<Position> &moves, std::vector<std::future<std::shared_ptr<Node>>> &nodeFutures,
-    std::size_t depth, int32_t alpha, int32_t beta, int color, const Strategy &strategy, FixedThreadPool &pool, NodeCache *cache) {
+    std::size_t depth, int32_t alpha, int32_t beta, int color, const Strategy &strategy, FixedThreadPool &pool, std::shared_ptr<NodeCache> cache) {
     for (Position position : moves) {
       State base(this->state);
       base.apply(position);
@@ -239,7 +239,7 @@ namespace Reversi {
       this->metric = child_metric;
       best = std::make_pair(position, child.get());
     }
-    this->children.push_back(std::make_pair(position, std::move(child)));
+    this->children.push_back(std::make_pair(position, child));
     return best;
   }
 
