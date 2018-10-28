@@ -48,14 +48,14 @@ namespace Reversi {
     friend std::ostream &operator<<(std::ostream &, const Node &);
     static std::ostream &dump(std::ostream &, const Node &, std::string = "\t", std::string = "");
    protected:
-    std::pair<int32_t, Node *> traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, NodeCache * = nullptr);
-    std::pair<int32_t, Node *> traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, FixedThreadPool &, NodeCache * = nullptr);
+    std::pair<int32_t, Node *> traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache> = nullptr);
+    std::pair<int32_t, Node *> traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache> = nullptr);
    private:
     std::pair<int32_t, Node *> zeroDepth(int, std::function<int32_t (const State &)>);
-    std::pair<int32_t, Node *> noMoves(std::size_t, int32_t, int32_t, int, bool, const Strategy &, NodeCache *);
-    std::optional<std::pair<Position, Node *>> addChild(Position, const State &, std::size_t, int32_t, int32_t, int, const Strategy &, NodeCache *);
+    std::pair<int32_t, Node *> noMoves(std::size_t, int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache>);
+    std::optional<std::pair<Position, Node *>> addChild(Position, const State &, std::size_t, int32_t, int32_t, int, const Strategy &, std::shared_ptr<NodeCache>);
     void generateFutures(std::vector<Position> &, std::vector<std::future<std::shared_ptr<Node>>> &,
-      std::size_t, int32_t, int32_t, int, const Strategy &, FixedThreadPool &, NodeCache *);
+      std::size_t, int32_t, int32_t, int, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache>);
     std::optional<std::pair<Position, Node *>> addChild(std::future<std::shared_ptr<Node>>, Position);
 
     State state;

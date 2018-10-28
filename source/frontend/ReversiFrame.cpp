@@ -29,11 +29,11 @@ namespace Reversi::Frontend {
     
     this->CreateStatusBar(2);
     this->Bind(ReversiFrameUpdateEvent, &ReversiFrame::OnUpdate, this);
-	this->Bind(wxEVT_SIZE, &ReversiFrame::OnResize, this);
-	this->Bind(wxEVT_MAXIMIZE, &ReversiFrame::OnMaximize, this);
+    this->Bind(wxEVT_SIZE, &ReversiFrame::OnResize, this);
+    this->Bind(wxEVT_MAXIMIZE, &ReversiFrame::OnMaximize, this);
   
     this->updateListener.setCallback([this](const State &state) {
-      wxQueueEvent(this, new wxThreadEvent(ReversiFrameUpdateEvent));
+      wxPostEvent(this, wxThreadEvent(ReversiFrameUpdateEvent));
     });
   }
 
