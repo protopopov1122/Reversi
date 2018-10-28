@@ -18,8 +18,8 @@ namespace Reversi {
   using ChildNodeUnique = std::pair<Move, std::shared_ptr<Node>>;
 
   struct Strategy {
-    BoardReduceFunction white;
-    BoardReduceFunction black;
+    std::function<int32_t (const State &)> white;
+    std::function<int32_t (const State &)> black;
   };
 
   class NodeCache {
@@ -51,7 +51,7 @@ namespace Reversi {
     std::pair<int32_t, Node *> traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, NodeCache * = nullptr);
     std::pair<int32_t, Node *> traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, FixedThreadPool &, NodeCache * = nullptr);
    private:
-    std::pair<int32_t, Node *> zeroDepth(int, BoardReduceFunction);
+    std::pair<int32_t, Node *> zeroDepth(int, std::function<int32_t (const State &)>);
     std::pair<int32_t, Node *> noMoves(std::size_t, int32_t, int32_t, int, bool, const Strategy &, NodeCache *);
     std::optional<std::pair<Position, Node *>> addChild(Position, const State &, std::size_t, int32_t, int32_t, int, const Strategy &, NodeCache *);
     void generateFutures(std::vector<Position> &, std::vector<std::future<std::shared_ptr<Node>>> &,

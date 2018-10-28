@@ -77,9 +77,9 @@ namespace Reversi {
   std::pair<int32_t, Node *> Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy,
     NodeCache *cache) {
     this->depth = depth;
-    BoardReduceFunction reduce = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
+    std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (depth == 0) {
-      return this->zeroDepth(color, reduce);
+      return this->zeroDepth(color, score_assess);
     } else {
       std::vector<Position> moves;
       this->state.getBoard().getMoves(moves, this->state.getPlayer());
@@ -126,9 +126,9 @@ namespace Reversi {
   std::pair<int32_t, Node *> Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, FixedThreadPool &pool,
     NodeCache *cache) {
     this->depth = depth;
-    BoardReduceFunction reduce = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
+    std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (depth == 0) {
-      return this->zeroDepth(color, reduce);
+      return this->zeroDepth(color, score_assess);
     } else {
       std::vector<Position> moves;
       this->state.getBoard().getMoves(moves, this->state.getPlayer());
@@ -181,15 +181,15 @@ namespace Reversi {
   }
 
 
-  std::pair<int32_t, Node *> Node::zeroDepth(int color, BoardReduceFunction reduce) {
-    this->metric = color * this->state.getBoard().getMetric(reduce);
+  std::pair<int32_t, Node *> Node::zeroDepth(int color, std::function<int32_t (const State &)> score_assess) {
+    this->metric = color * score_assess(this->state);
     return std::make_pair(this->metric, this);
   }
 
   std::pair<int32_t, Node *> Node::noMoves(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, NodeCache *cache) {
-    BoardReduceFunction reduce = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
+    std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (abortOnNoMoves) {
-      this->metric = color * this->state.getBoard().getMetric(reduce);
+      this->metric = color * score_assess(this->state);
       return std::make_pair(this->metric, this);
     } else {
       State base(this->state);

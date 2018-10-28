@@ -45,9 +45,7 @@ namespace Reversi {
   void AIPlayer::aiTurn(const State &state) {
     this->active = true;
     std::thread thread([&]() {
-      BoardReduceFunction reduce = [](int32_t sum, CellState state, Position position) {
-        return sum + static_cast<int>(state);
-      };
+      std::function<int32_t (const State &)> reduce = AIPlayer::assessState;
       Strategy strat = {reduce, reduce};
       Node root(state);
       auto move = root.build(this->difficulty, strat, this->threads);
@@ -57,5 +55,11 @@ namespace Reversi {
       }
     });
     thread.detach();
+  }
+
+  int32_t AIPlayer::assessState(const State &state) {
+    return state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
+      return sum + static_cast<int>(state);
+    });
   }
 }
