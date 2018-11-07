@@ -61,71 +61,72 @@ namespace Reversi {
   }
 
   int32_t AIPlayer::assessState(const State &state) {
-    const int WEIGHTS[8][8] = {
-      {20, -3, 11, 8, 8, 11, -3, 20},
-    	{-3, -7, -4, 1, 1, -4, -7, -3},
-    	{11, -4, 2, 2, 2, 2, -4, 11},
-    	{8, 1, 2, -3, -3, 2, 1, 8},
-    	{8, 1, 2, -3, -3, 2, 1, 8},
-    	{11, -4, 2, 2, 2, 2, -4, 11},
-    	{-3, -7, -4, 1, 1, -4, -7, -3},
-      {20, -3, 11, 8, 8, 11, -3, 20}
+    const static int WEIGHTS[8][8] = {
+        { 65,  -3, 6, 4, 4, 6,  -3, 65 },
+        { -3, -29, 3, 1, 1, 3, -29, -3 },
+        { 6,   3, 5, 3, 3, 5,   3,  6 },
+        { 4,   1, 3, 1, 1, 3,   1,  4 },
+        { 4,   1, 3, 1, 1, 3,   1,  4 },
+        { 6,   3, 5, 3, 3, 5,   3,  6 },
+        { -3, -29, 3, 1, 1, 3, -29, -3 },
+        { 65,  -3, 6, 4, 4, 6,  -3, 65 }
     };
-    int32_t total_sum = state.getBoard().getMetric([&](int32_t sum, CellState state, Position position) {
-      return sum + static_cast<int>(state); // * WEIGHTS[position.getColumn() - 'A'][position.getRow() - 1];
-    });
+    const int32_t END_OF_GAME_THRESHOLD = 54;
 
-    int32_t white_discs = state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
+    int32_t white_discs =  state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
       if (state == CellState::White) {
         return sum + 1;
       } else {
         return sum;
       }
     });
-    int32_t black_discs = state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
-      if (state == CellState::Black) {
+    int32_t black_discs =  state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
+      if (state == CellState::White) {
         return sum + 1;
       } else {
         return sum;
       }
     });
-    float parity = static_cast<float>(white_discs - black_discs) / (white_discs + black_discs);
-    std::vector<Position> moves;
-    state.getBoard().getMoves(moves, Player::White);
-    int32_t white_moves = moves.size();
-    moves.clear();
-    state.getBoard().getMoves(moves, Player::Black);
-    int32_t black_moves = moves.size();
-    float mobility = 0;
-    if (white_moves != black_moves) {
-      mobility = static_cast<float>(white_moves - black_moves) / (white_moves + black_moves);
+    int32_t total_sum = white_discs + black_discs;
+    int32_t disc_diff = white_discs - black_discs;
+    if (total_sum >= END_OF_GAME_THRESHOLD) {
+      return disc_diff;
+    } else {
+      int32_t weight_heuristic = state.getBoard().getMetric([&](int32_t sum, CellState state, Position position) {
+        return sum + static_cast<int>(state) * WEIGHTS[position.getRow() - 1][position.getColumn() - 'A'];
+      });
+      int32_t around_heuristic = state.getBoard().getMetric([&](int32_t sum, CellState cellState, Position position) {
+        if (cellState == CellState::Empty) {
+          return sum;
+        } else {
+          return sum + AIPlayer::calculateEmptyDiscsAround(state, position);
+        }
+      });
+      return disc_diff + weight_heuristic + around_heuristic;
     }
+  }
 
-    int32_t white_corners = state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
-      if (state == CellState::White &&
-        (position.getColumn() == 'A' || position.getColumn() == 'H') &&
-        (position.getRow() == 1 || position.getRow() == 8)) {
-        return sum + 1;
+  int32_t AIPlayer::calculateEmptyDiscsAround(const State &state, Position position) {
+    std::function<int32_t (char, unsigned int)> empty = [state](char column, unsigned int row) {
+      if (Position::isPossible(column, row) && state.getBoard().getCellState(Position(column, row)) == CellState::Empty) {
+        return 1;
       } else {
-        return sum;
+        return 0;
       }
-    });
-    int32_t black_corners = state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
-      if (state == CellState::Black &&
-        (position.getColumn() == 'A' || position.getColumn() == 'H') &&
-        (position.getRow() == 1 || position.getRow() == 8)) {
-        return sum + 1;
-      } else {
-        return sum;
-      }
-    });
-
-    float corner_heuristic = 0;
-    if (white_corners != black_corners) {
-      corner_heuristic = static_cast<float>(white_corners - black_corners) / (white_corners + black_corners);
+    };
+    unsigned int row = position.getRow();
+    char col = position.getColumn();
+    int32_t empty_cells = -(empty(col, row - 1) +
+      empty(col, row + 1) +
+      empty(col - 1, row) +
+      empty(col + 1, row) +
+      empty(col - 1, row - 1) +
+      empty(col - 1, row + 1) +
+      empty(col + 1, row - 1) +
+      empty(col + 1, row + 1));
+    if (empty_cells == 0) {
+      empty_cells = 2;
     }
-
-    float total = 50 * parity + 100 * corner_heuristic + 10 * mobility;
-    return static_cast<int32_t>(total);
+    return empty_cells * static_cast<int>(state.getBoard().getCellState(position));     
   }
 }
