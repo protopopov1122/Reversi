@@ -56,11 +56,15 @@ namespace Reversi::Frontend {
 
   class ReversiHumanAISession : public DefaultReversiSession {
    public:
-    ReversiHumanAISession(Player human, unsigned int difficulty)
-      : human(human), ai(invertPlayer(human), difficulty, this->engine) {}
+    ReversiHumanAISession(Player human, unsigned int difficulty, bool randomizeAi)
+      : human(human), ai(invertPlayer(human), difficulty, this->engine), randomizeAi(randomizeAi) {
+      this->ai.setRandomized(this->randomizeAi);
+    }
 
-    ReversiHumanAISession(Player human, const State &state, unsigned int difficulty)
-      : DefaultReversiSession::DefaultReversiSession(state), human(human), ai(invertPlayer(human), difficulty, this->engine) {}
+    ReversiHumanAISession(Player human, const State &state, unsigned int difficulty, bool randomizeAi)
+      : DefaultReversiSession::DefaultReversiSession(state), human(human), ai(invertPlayer(human), difficulty, this->engine), randomizeAi(randomizeAi) {
+      this->ai.setRandomized(this->randomizeAi);
+    }
 
     void onClick(Position position) override {
       if (!StateHelpers::isGameFinished(this->getState())) {
@@ -86,24 +90,40 @@ namespace Reversi::Frontend {
       wxSpinCtrl *difficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
         wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, 10, this->ai.getDifficulty());
       sizer->Add(difficulty, 0, wxALIGN_CENTER);
-      difficulty->Bind(wxEVT_SPINCTRL, [&, difficulty](wxCommandEvent &evt) {
+      difficulty->Bind(wxEVT_SPINCTRL, [this, difficulty](wxCommandEvent &evt) {
         this->ai.setDifficulty(difficulty->GetValue());
       });
+      wxCheckBox *randomizeCheckbox = new wxCheckBox(settingsPanel, wxID_ANY, "Randomize AI");
+      sizer->Add(randomizeCheckbox);
+      randomizeCheckbox->Bind(wxEVT_CHECKBOX, [this, randomizeCheckbox](wxCommandEvent &evt) {
+        bool rand = randomizeCheckbox->GetValue();
+        this->ai.setRandomized(rand);
+      });
+      randomizeCheckbox->SetValue(this->randomizeAi);
       return settingsPanel;
     }
    private:
     Player human;
     AIPlayer ai;
+    bool randomizeAi;
   };
 
   class ReversiAIAISession : public DefaultReversiSession {
    public:
-    ReversiAIAISession(unsigned int whiteDifficulty, unsigned int blackDifficulty)
-      : aiWhite(Player::White, whiteDifficulty, this->engine, true), aiBlack(Player::Black, blackDifficulty, this->engine, true) {}
+    ReversiAIAISession(unsigned int whiteDifficulty, unsigned int blackDifficulty, bool randomizeAi)
+      : aiWhite(Player::White, whiteDifficulty, this->engine, true), aiBlack(Player::Black, blackDifficulty, this->engine, true),
+        randomizeAi(randomizeAi) {
+      this->aiWhite.setRandomized(this->randomizeAi);
+      this->aiBlack.setRandomized(this->randomizeAi);
+    }
    
-    ReversiAIAISession(const State &state, unsigned int whiteDifficulty, unsigned int blackDifficulty)
+    ReversiAIAISession(const State &state, unsigned int whiteDifficulty, unsigned int blackDifficulty, bool randomizeAi)
       : DefaultReversiSession::DefaultReversiSession(state),
-        aiWhite(Player::White, whiteDifficulty, this->engine, true), aiBlack(Player::Black, blackDifficulty, this->engine, true) {}
+        aiWhite(Player::White, whiteDifficulty, this->engine, true), aiBlack(Player::Black, blackDifficulty, this->engine, true),
+        randomizeAi(randomizeAi) {
+      this->aiWhite.setRandomized(this->randomizeAi);
+      this->aiBlack.setRandomized(this->randomizeAi);
+    }
    
     void onClick(Position position) override {
       if (!StateHelpers::isGameFinished(this->getState())) {
@@ -133,21 +153,30 @@ namespace Reversi::Frontend {
       wxSpinCtrl *whiteDifficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
         wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, 10, this->aiWhite.getDifficulty());
       sizer->Add(whiteDifficulty, 0, wxALIGN_CENTER);
-      whiteDifficulty->Bind(wxEVT_SPINCTRL, [&, whiteDifficulty](wxCommandEvent &evt) {
+      whiteDifficulty->Bind(wxEVT_SPINCTRL, [this, whiteDifficulty](wxCommandEvent &evt) {
         this->aiWhite.setDifficulty(whiteDifficulty->GetValue());
       });
       sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Black difficulty: "), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
       wxSpinCtrl *blackDifficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
         wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, 10, this->aiBlack.getDifficulty());
       sizer->Add(blackDifficulty, 0, wxALIGN_CENTER);
-      blackDifficulty->Bind(wxEVT_SPINCTRL, [&, blackDifficulty](wxCommandEvent &evt) {
+      blackDifficulty->Bind(wxEVT_SPINCTRL, [this, blackDifficulty](wxCommandEvent &evt) {
         this->aiBlack.setDifficulty(blackDifficulty->GetValue());
       });
+      wxCheckBox *randomizeCheckbox = new wxCheckBox(settingsPanel, wxID_ANY, "Randomize AI");
+      sizer->Add(randomizeCheckbox);
+      randomizeCheckbox->Bind(wxEVT_CHECKBOX, [this, randomizeCheckbox](wxCommandEvent &evt) {
+        bool rand = randomizeCheckbox->GetValue();
+        this->aiWhite.setRandomized(rand);
+        this->aiBlack.setRandomized(rand);
+      });
+      randomizeCheckbox->SetValue(this->randomizeAi);
       return settingsPanel;
     }
    private:
     AIPlayer aiWhite;
     AIPlayer aiBlack;
+    bool randomizeAi;
   };
 
   class LambdaReversiSessionFactory : public ReversiSessionFactory {
@@ -167,15 +196,15 @@ namespace Reversi::Frontend {
   });
 
   std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::Human_AI = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
-    return std::make_unique<ReversiHumanAISession>(state.getPlayer(), state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY);
+    return std::make_unique<ReversiHumanAISession>(state.getPlayer(), state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY, false);
   });
 
   std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::AI_Human = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
-    return std::make_unique<ReversiHumanAISession>(invertPlayer(state.getPlayer()), state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY);
+    return std::make_unique<ReversiHumanAISession>(invertPlayer(state.getPlayer()), state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY, false);
   });
 
   std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::AI_AI = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
-    return std::make_unique<ReversiAIAISession>(state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY, DefaultReversiSession::DEFAULT_AI_DIFFICULTY);
+    return std::make_unique<ReversiAIAISession>(state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY, DefaultReversiSession::DEFAULT_AI_DIFFICULTY, true);
   });
 
 }
