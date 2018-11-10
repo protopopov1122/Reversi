@@ -1,7 +1,10 @@
 #include "reversi/engine/Tree.h"
 #include <iostream>
+#include <random>
 
 namespace Reversi {
+  static std::random_device random_device;
+  static std::mt19937 random_generator(random_device());
 
   bool NodeCache::has(const State &state, std::size_t depth) {
     std::shared_lock<std::shared_mutex> lock(this->cacheMutex);
@@ -50,22 +53,28 @@ namespace Reversi {
     return this->optimal;
   }
 
-  std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, bool useCache) {
+  std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, bool randomize, bool useCache) {
     this->depth = depth;
-    std::shared_ptr<NodeCache> cache = std::make_shared<NodeCache>();
-    this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, useCache ? cache : nullptr);
+    std::shared_ptr<NodeCache> cache = useCache ? std::make_shared<NodeCache>() : nullptr;
+    this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, cache, !randomize);
+    if (randomize) {
+      this->randomizeOptimal();
+    }
     return this->optimal;
   }
 
-  std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, FixedThreadPool &pool, bool useCache) {
+  std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, FixedThreadPool &pool, bool randomize, bool useCache) {
     this->depth = depth;
-    std::shared_ptr<NodeCache> cache = std::make_shared<NodeCache>();
-    this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, pool, useCache ? cache : nullptr);
+    std::shared_ptr<NodeCache> cache = useCache ? std::make_shared<NodeCache>() : nullptr;
+    this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, pool, cache, !randomize);
+    if (randomize) {
+      this->randomizeOptimal();
+    }
     return this->optimal;
   }
 
   int32_t Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy,
-    std::shared_ptr<NodeCache> cache) {
+    std::shared_ptr<NodeCache> cache, bool useAlphaBeta) {
     this->depth = depth;
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (depth == 0) {
@@ -102,7 +111,7 @@ namespace Reversi {
         if (this->metric > alpha) {
           alpha = this->metric;
         }
-        if (alpha >= beta) {
+        if (alpha >= beta && useAlphaBeta) {
           break;
         }
       }
@@ -114,7 +123,7 @@ namespace Reversi {
   }
 
   int32_t Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, FixedThreadPool &pool,
-    std::shared_ptr<NodeCache> cache) {
+    std::shared_ptr<NodeCache> cache, bool useAlphaBeta) {
     this->depth = depth;
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (depth == 0) {
@@ -144,7 +153,7 @@ namespace Reversi {
         if (this->metric > alpha) {
           alpha = this->metric;
         }
-        if (alpha >= beta) {
+        if (alpha >= beta && useAlphaBeta) {
           break;
         }
       }
@@ -230,6 +239,24 @@ namespace Reversi {
     }
     this->children.push_back(ChildNode(position, child));
     return best;
+  }
+
+  void Node::randomizeOptimal() {
+    if (!this->optimal.has_value()) {
+      return;
+    }
+    int32_t metric = this->optimal.value().node->getMetric();
+    std::vector<ChildNode> best_children;
+    for (const auto &child : this->children) {
+      if (child.node->getMetric() == metric) {
+        best_children.push_back(child);
+      }
+    }
+    if (best_children.size() > 1) {
+      
+      std::uniform_int_distribution<> distribution(0, best_children.size() - 1);
+      this->optimal = best_children.at(distribution(random_generator));
+    }
   }
 
   std::ostream &operator<<(std::ostream &os, const Node &root) {

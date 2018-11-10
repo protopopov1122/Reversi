@@ -5,7 +5,7 @@ namespace Reversi {
   static const std::size_t THREAD_POOL_CAPACITY = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
 
   AIPlayer::AIPlayer(Player player, unsigned int difficulty, GameEngine &engine, bool wait)
-    : player(player), difficulty(difficulty), threads(THREAD_POOL_CAPACITY), engine(engine), active(false), wait(wait) {
+    : player(player), difficulty(difficulty), threads(THREAD_POOL_CAPACITY), engine(engine), active(false), wait(wait), randomized(false) {
     this->engine.addEventListener(*this);
   }
 
@@ -29,6 +29,10 @@ namespace Reversi {
     return this->active.load();
   }
 
+  void AIPlayer::setRandomized(bool rand) {
+    this->randomized = rand;
+  }
+
   void AIPlayer::makeMove() {
     const State &state = this->engine.getState();
     if (state.getPlayer() == this->player) {
@@ -48,7 +52,7 @@ namespace Reversi {
       std::function<int32_t (const State &)> reduce = AIPlayer::assessState;
       Strategy strat = {reduce, reduce};
       Node root(state);
-      auto move = root.build(this->difficulty, strat, this->threads);
+      auto move = root.build(this->difficulty, strat, this->threads, this->randomized);
       this->active = false;
       if (move && move.value().move) {
         this->engine.receiveEvent(PlayerMove(state.getPlayer(), move.value().move.value()));

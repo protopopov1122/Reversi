@@ -19,6 +19,7 @@ namespace Reversi {
     unsigned int getDifficulty() const;
     void setDifficulty(unsigned int);
     bool isActive() const;
+    void setRandomized(bool);
 
     void makeMove();
     void receiveEvent(const State &) override;
@@ -33,6 +34,7 @@ namespace Reversi {
     GameEngine &engine;
     std::atomic<bool> active;
     bool wait;
+    bool randomized;
   };
 }
 
