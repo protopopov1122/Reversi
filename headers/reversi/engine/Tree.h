@@ -14,8 +14,32 @@ namespace Reversi {
   class Node; // Forward referencing
 
   using Move = std::optional<Position>;
-  using ChildNode = std::pair<Move, Node *>;
-  using ChildNodeUnique = std::pair<Move, std::shared_ptr<Node>>;
+
+  struct ChildNode {
+    ChildNode(Move move, std::shared_ptr<Node> child)
+      : move(move), node(child) {}
+    ChildNode(Position move, std::shared_ptr<Node> child)
+      : move(move), node(child) {}
+    ChildNode(const ChildNode &node)
+      : move(node.move), node(node.node) {}
+    ChildNode(ChildNode &&node) {
+      this->move = std::move(node.move);
+      this->node = std::move(node.node);
+      node.node = nullptr;
+    }
+    
+    ChildNode &operator=(const ChildNode &node) {
+      this->move = node.move;
+      this->node = node.node;
+      return *this;
+    }
+
+    std::pair<Move, std::shared_ptr<Node>> asTuple() const {
+      return std::make_pair(this->move, this->node);
+    }
+    Move move;
+    std::shared_ptr<Node> node;
+  };
 
   struct Strategy {
     std::function<int32_t (const State &)> white;
@@ -40,28 +64,26 @@ namespace Reversi {
     int32_t getMetric() const;
     std::size_t getDepth() const;
     const State &getState() const;
-    bool isTerminal() const;
-    bool isBuilt() const;
     std::optional<ChildNode> getOptimalChild() const;
-    void getChildren(std::vector<ChildNode> &) const;
 
     friend std::ostream &operator<<(std::ostream &, const Node &);
     static std::ostream &dump(std::ostream &, const Node &, std::string = "\t", std::string = "");
    protected:
-    std::pair<int32_t, Node *> traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache> = nullptr);
-    std::pair<int32_t, Node *> traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache> = nullptr);
+    const std::vector<ChildNode> &getChildren() const;
+    int32_t traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache> = nullptr);
+    int32_t traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache> = nullptr);
    private:
-    std::pair<int32_t, Node *> zeroDepth(int, std::function<int32_t (const State &)>);
-    std::pair<int32_t, Node *> noMoves(std::size_t, int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache>);
-    std::optional<std::pair<Position, Node *>> addChild(Position, const State &, std::size_t, int32_t, int32_t, int, const Strategy &, std::shared_ptr<NodeCache>);
+    int32_t zeroDepth(int, std::function<int32_t (const State &)>);
+    int32_t noMoves(std::size_t, int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache>);
+    std::optional<ChildNode> addChild(Position, const State &, std::size_t, int32_t, int32_t, int, const Strategy &, std::shared_ptr<NodeCache>);
     void generateFutures(std::vector<Position> &, std::vector<std::future<std::shared_ptr<Node>>> &,
       std::size_t, int32_t, int32_t, int, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache>);
-    std::optional<std::pair<Position, Node *>> addChild(std::future<std::shared_ptr<Node>>, Position);
+    std::optional<ChildNode> addChild(std::future<std::shared_ptr<Node>>, Position);
 
     State state;
     std::size_t depth;
     int32_t metric;
-    std::vector<ChildNodeUnique> children;
+    std::vector<ChildNode> children;
     std::optional<ChildNode> optimal;
   };
 }

@@ -50,8 +50,8 @@ namespace Reversi {
       Node root(state);
       auto move = root.build(this->difficulty, strat, this->threads);
       this->active = false;
-      if (move && move.value().first) {
-        this->engine.receiveEvent(PlayerMove(state.getPlayer(), move.value().first.value()));
+      if (move && move.value().move) {
+        this->engine.receiveEvent(PlayerMove(state.getPlayer(), move.value().move.value()));
       } else {
         std::vector<Position> moves;
         state.getBoard().getMoves(moves, this->player);

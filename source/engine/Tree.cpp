@@ -42,18 +42,8 @@ namespace Reversi {
     return this->state;
   }
 
-  bool Node::isTerminal() const {
-    return this->children.empty();
-  }
-
-  bool Node::isBuilt() const {
-    return this->metric == INT32_MIN;
-  }
-
-  void Node::getChildren(std::vector<ChildNode> &children) const {
-    for (const auto &child : this->children) {
-      children.push_back(std::make_pair(child.first, child.second.get()));
-    }
+  const std::vector<ChildNode> &Node::getChildren() const {
+    return this->children;
   }
 
   std::optional<ChildNode> Node::getOptimalChild() const {
@@ -74,7 +64,7 @@ namespace Reversi {
     return this->optimal;
   }
 
-  std::pair<int32_t, Node *> Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy,
+  int32_t Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy,
     std::shared_ptr<NodeCache> cache) {
     this->depth = depth;
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
@@ -89,22 +79,22 @@ namespace Reversi {
 
       this->metric = INT32_MIN;
       Move bestMove;
-      Node *best_child = nullptr;
+      std::shared_ptr<Node> best_child = nullptr;
       State base(this->state);
       for (Position position : moves) {
         base.apply(position);
         if (cache && cache->has(base, depth - 1)) {
           std::shared_ptr<Node> child = cache->get(base);
-          this->children.push_back(std::make_pair(position, child));
+          this->children.push_back(ChildNode(position, child));
           if (child->getMetric() > this->metric) {
             this->metric = child->getMetric();
             bestMove = position;
-            best_child = child.get();
+            best_child = child;
           }
         } else {
           auto child_best = this->addChild(position, base, depth, alpha, beta, color, strategy, cache);
           if (child_best) {
-            std::tie(bestMove, best_child) = child_best.value();
+            std::tie(bestMove, best_child) = child_best.value().asTuple();
           }
         }
         base = this->state;
@@ -117,13 +107,13 @@ namespace Reversi {
         }
       }
       if (best_child) {
-        this->optimal = std::make_pair(bestMove, best_child);
+        this->optimal = ChildNode(bestMove, best_child);
       }
-      return std::make_pair(this->metric, best_child);
+      return this->metric;
     }
   }
 
-  std::pair<int32_t, Node *> Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, FixedThreadPool &pool,
+  int32_t Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, FixedThreadPool &pool,
     std::shared_ptr<NodeCache> cache) {
     this->depth = depth;
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
@@ -142,13 +132,13 @@ namespace Reversi {
 
       this->metric = INT32_MIN;
       Move bestMove;
-      Node *best_child = nullptr;
+      std::shared_ptr<Node> best_child = nullptr;
       for (std::size_t i = 0; i < nodeFutures.size(); i++) {
         auto nodeFuture = std::move(nodeFutures.at(i));
         Position position = moves.at(i);
         auto child_best = this->addChild(std::move(nodeFuture), position);
         if (child_best) {
-          std::tie(bestMove, best_child) = child_best.value();
+          std::tie(bestMove, best_child) = child_best.value().asTuple();
         }
 
         if (this->metric > alpha) {
@@ -160,61 +150,60 @@ namespace Reversi {
       }
 
       if (best_child) {
-        this->optimal = std::make_pair(bestMove, best_child);
+        this->optimal = ChildNode(bestMove, best_child);
       }
-      return std::make_pair(this->metric, best_child);
+      return this->metric;
     }
   }
 
   std::ostream &Node::dump(std::ostream &os, const Node &root, std::string separator, std::string prefix) {
-    std::vector<std::pair<Move, Node *>> children;
-    root.getChildren(children);
+    const std::vector<ChildNode> &children = root.getChildren();
     for (const auto &child : children) {
       os << prefix;
-      if (child.first) {
-        os << prefix << child.first.value() << ' ';
+      if (child.move) {
+        os << prefix << child.move.value() << ' ';
       }
-      os << child.second->getMetric() << std::endl;
-      Node::dump(os, *child.second, separator, prefix + separator);
+      os << child.node->getMetric() << std::endl;
+      Node::dump(os, *child.node, separator, prefix + separator);
     }
     return os;
   }
 
 
-  std::pair<int32_t, Node *> Node::zeroDepth(int color, std::function<int32_t (const State &)> score_assess) {
+  int32_t Node::zeroDepth(int color, std::function<int32_t (const State &)> score_assess) {
     this->metric = color * score_assess(this->state);
-    return std::make_pair(this->metric, this);
+    return this->metric;
   }
 
-  std::pair<int32_t, Node *> Node::noMoves(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
+  int32_t Node::noMoves(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (abortOnNoMoves) {
       this->metric = color * score_assess(this->state);
-      return std::make_pair(this->metric, this);
+      return this->metric;
     } else {
       State base(this->state);
       base.next();
       std::shared_ptr<Node> child = std::make_shared<Node>(base);
-      this->metric = -child->traverse(depth - 1, -beta, -alpha, -color, true, strategy, cache).first;
-      this->optimal = std::make_pair(Move(), child.get());
-      this->children.push_back(std::make_pair(Move(), child)); // TODO
-      return std::make_pair(this->metric, this->optimal.value().second);
+      this->metric = -child->traverse(depth - 1, -beta, -alpha, -color, true, strategy, cache);
+      this->optimal = ChildNode(Move(), child);
+      this->children.push_back(ChildNode(Move(), child)); // TODO
+      return this->metric;
     }
   }
 
-  std::optional<std::pair<Position, Node *>> Node::addChild(Position position, const State &base, std::size_t depth, int32_t alpha, int32_t beta, int color, const Strategy &strategy,
+  std::optional<ChildNode> Node::addChild(Position position, const State &base, std::size_t depth, int32_t alpha, int32_t beta, int color, const Strategy &strategy,
     std::shared_ptr<NodeCache> cache) {
-    std::optional<std::pair<Position, Node *>> best;
+    std::optional<ChildNode> best;
     std::shared_ptr<Node> child = std::make_shared<Node>(base);
-    int32_t child_metric = -child->traverse(depth - 1, -beta, -alpha, -color, false, strategy, cache).first;
+    int32_t child_metric = -child->traverse(depth - 1, -beta, -alpha, -color, false, strategy, cache);
     if (child_metric > this->metric) {
       this->metric = child_metric;
-      best = std::make_pair(position, child.get());
+      best = ChildNode(position, child);
     }
     if (cache) {
       cache->put(child);
     }
-    this->children.push_back(std::make_pair(position, child));
+    this->children.push_back(ChildNode(position, child));
     return best;
   }
 
@@ -231,23 +220,23 @@ namespace Reversi {
     }
   }
 
-  std::optional<std::pair<Position, Node *>> Node::addChild(std::future<std::shared_ptr<Node>> nodeFuture, Position position) {
-    std::optional<std::pair<Position, Node *>> best;
+  std::optional<ChildNode> Node::addChild(std::future<std::shared_ptr<Node>> nodeFuture, Position position) {
+    std::optional<ChildNode> best;
     std::shared_ptr<Node> child = nodeFuture.get();
     int32_t child_metric = -child->getMetric();
     if (child_metric > this->metric) {
       this->metric = child_metric;
-      best = std::make_pair(position, child.get());
+      best = ChildNode(position, child);
     }
-    this->children.push_back(std::make_pair(position, child));
+    this->children.push_back(ChildNode(position, child));
     return best;
   }
 
   std::ostream &operator<<(std::ostream &os, const Node &root) {
-    std::optional<std::pair<Move, Node *>> optimal = root.getOptimalChild();
+    std::optional<ChildNode> optimal = root.getOptimalChild();
     if (optimal) {
-      if (optimal.value().first) {
-        os << optimal.value().first.value() << ' ';
+      if (optimal.value().move) {
+        os << optimal.value().move.value() << ' ';
       }
       os << root.getMetric() << std::endl;
     }
