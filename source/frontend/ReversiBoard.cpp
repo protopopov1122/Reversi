@@ -35,7 +35,7 @@ namespace Reversi::Frontend {
   void ReversiBoard::OnMouseClick(wxMouseEvent &evt) {
     wxPoint point = evt.GetPosition();
     wxSize size = this->GetSize();
-    if (this->session) {
+    if (this->session && this->renderer.insideBoard(size, point)) {
       this->session->onClick(this->renderer.getPosition(size, point));
     }
   }

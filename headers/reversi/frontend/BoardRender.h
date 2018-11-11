@@ -10,6 +10,7 @@ namespace Reversi::Frontend {
     virtual ~ReversiBoardRender() = default;
     virtual wxRect getCell(const wxSize &, Position) = 0;
     virtual Position getPosition(const wxSize &, wxPoint) = 0;
+    virtual bool insideBoard(const wxSize &, wxPoint) = 0;
     virtual void render(wxDC &, const wxSize &, const State *) = 0;
     virtual void highlight(wxDC &, const wxSize &, const std::vector<Position> &) = 0;
   };
@@ -18,6 +19,7 @@ namespace Reversi::Frontend {
    public:
     wxRect getCell(const wxSize &, Position) override;
     Position getPosition(const wxSize &, wxPoint) override;
+    bool insideBoard(const wxSize &, wxPoint) override;
     void render(wxDC &, const wxSize &, const State *) override;
     void highlight(wxDC &, const wxSize &, const std::vector<Position> &) override;
    private:

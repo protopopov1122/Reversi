@@ -19,6 +19,10 @@ namespace Reversi::Frontend {
     return Position(row, col);
   }
 
+  bool ReversiDefaultBoardRender::insideBoard(const wxSize &size, wxPoint coord) {
+    return this->getBoard(size).Contains(coord);
+  }
+
   void ReversiDefaultBoardRender::render(wxDC &dc, const wxSize &size, const State *state) {
     wxColour backgroundColor(255, 255, 255);
     wxColour cellBorderColor(0, 0, 0);
