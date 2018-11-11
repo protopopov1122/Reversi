@@ -11,6 +11,14 @@
 namespace Reversi {
 
   using PlayerMove = std::pair<Player, Position>;
+  struct PlayerMoveDiff {
+    PlayerMoveDiff(Player player, Position move, float metric)
+      : player(player), move(move), metric(metric) {}
+
+    Player player;
+    Position move;
+    float metric;
+  };
 
   class GameEngine : public EventListener<PlayerMove>, public EventSource<State> {
    public:
@@ -18,14 +26,14 @@ namespace Reversi {
     GameEngine(const State &);
     virtual ~GameEngine() = default;
     const State &getState() const;
-    const std::vector<PlayerMove> &getMoves() const;
+    const std::vector<PlayerMoveDiff> &getMoves() const;
     void undoMove(std::size_t = 0);
    protected:
     void stateUpdated();
   
     State baseState;
     State state;
-    std::vector<PlayerMove> moves;
+    std::vector<PlayerMoveDiff> moves;
   };
   
   class StateHelpers {
@@ -34,6 +42,9 @@ namespace Reversi {
     static bool isMovePossible(const State &, Player, Position);
     static bool isGameFinished(const State &);
     static State getDefaultInitialState();
+    static int32_t assessState(const State &);
+   private:
+    static int32_t calculateEmptyDiscsAround(const State &, Position);
   };
 
   class DefaultGameEngine : public GameEngine {

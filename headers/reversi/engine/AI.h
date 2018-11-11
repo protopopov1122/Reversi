@@ -25,8 +25,6 @@ namespace Reversi {
     void receiveEvent(const State &) override;
    private:
     void aiTurn(const State &);
-    static int32_t assessState(const State &);
-    static int32_t calculateEmptyDiscsAround(const State &, Position);
 
     Player player;
     unsigned int difficulty;

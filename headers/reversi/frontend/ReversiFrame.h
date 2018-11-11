@@ -33,7 +33,7 @@ namespace Reversi::Frontend {
     void OnMaximize(wxMaximizeEvent &);
     
     void updateStatistics(const State &);
-    void showMoves(const std::vector<PlayerMove> &);
+    void showMoves(const std::vector<PlayerMoveDiff> &);
 
     std::unique_ptr<DefaultReversiSession> session;
     FunctionEventListener<State> updateListener;

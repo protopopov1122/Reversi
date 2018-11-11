@@ -10,7 +10,7 @@ namespace Reversi::Frontend {
    public:
     virtual ~ReversiSession() = default;
     virtual const State &getState() const = 0;
-    virtual const std::vector<PlayerMove> &getMoves() const = 0;
+    virtual const std::vector<PlayerMoveDiff> &getMoves() const = 0;
     virtual void onClick(Position) = 0;
   };
 
@@ -21,7 +21,7 @@ namespace Reversi::Frontend {
 
     GameEngine &getEngine();
     const State &getState() const override;
-    const std::vector<PlayerMove> &getMoves() const override;
+    const std::vector<PlayerMoveDiff> &getMoves() const override;
     bool isClosing();
     virtual wxWindow *getSettings(wxWindow *, wxWindowID) = 0;
     virtual bool isCurrentlyProcessing() = 0;

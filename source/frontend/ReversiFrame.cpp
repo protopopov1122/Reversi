@@ -4,13 +4,18 @@
 #include <wx/stattext.h>
 #include <iostream>
 #include <algorithm>
+#include <sstream>
+#include <iomanip>
+#include <cmath>
 
 namespace Reversi::Frontend {
+
+  static constexpr bool DISPLAY_MOVE_METRIC = false;
 
   wxDEFINE_EVENT(ReversiFrameUpdateEvent, wxThreadEvent);
 
   ReversiFrame::ReversiFrame(std::string title)
-     : wxFrame::wxFrame(nullptr, wxID_DEFAULT, title, wxDefaultPosition, wxSize(650, 550)),
+     : wxFrame::wxFrame(nullptr, wxID_DEFAULT, title, wxDefaultPosition, wxSize(DISPLAY_MOVE_METRIC ? 750 : 650, 550)),
        session(nullptr), sessionSettings(nullptr) {
     this->SetMinSize(this->GetSize());
     wxBoxSizer *frameSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -117,6 +122,9 @@ namespace Reversi::Frontend {
     this->moveList->InsertColumn(0, "#");
     this->moveList->InsertColumn(1, "Player");
     this->moveList->InsertColumn(2, "Move");
+    if constexpr (DISPLAY_MOVE_METRIC) {
+      this->moveList->InsertColumn(3, "Metric");
+    }
   }
 
   void ReversiFrame::OnHumanHumanGame(wxCommandEvent &evt) {
@@ -197,14 +205,21 @@ namespace Reversi::Frontend {
     }
   }
 
-  void ReversiFrame::showMoves(const std::vector<PlayerMove> &moves) {
+  void ReversiFrame::showMoves(const std::vector<PlayerMoveDiff> &moves) {
     for (std::size_t i = 0; i < moves.size(); i++) {
       wxListItem item;
       this->moveList->InsertItem(i, item);
       this->moveList->SetItem(i, 0, std::to_string(i + 1));
-      this->moveList->SetItem(i, 1, moves.at(i).first == Player::White ? "White" : "Black");
-      Position move = moves.at(i).second;
+      this->moveList->SetItem(i, 1, moves.at(i).player == Player::White ? "White" : "Black");
+      Position move = moves.at(i).move;
       this->moveList->SetItem(i, 2, std::string(1, move.getColumn()) + std::to_string(move.getRow()));
+      if constexpr (DISPLAY_MOVE_METRIC) {
+        if (!isinf(moves.at(i).metric)) {
+          std::stringstream stream;
+          stream << std::fixed << std::setprecision(2) << moves.at(i).metric;
+          this->moveList->SetItem(i, 3, stream.str() + "%");
+        }
+      }
     }
   }
 }

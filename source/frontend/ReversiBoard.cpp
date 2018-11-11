@@ -65,9 +65,9 @@ namespace Reversi::Frontend {
       if (!this->session->getMoves().empty() && this->outlineLastMove) {
         dc.SetPen(lastMovePen);
         dc.SetBrush(*wxTRANSPARENT_BRUSH);
-        PlayerMove move = this->session->getMoves().back();
+        PlayerMoveDiff move = this->session->getMoves().back();
         std::vector<Position> position {
-          move.second
+          move.move
         };
         this->renderer.highlight(dc, this->GetSize(), position);
       }

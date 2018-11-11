@@ -19,7 +19,7 @@ namespace Reversi::Frontend {
     return this->engine.getState();
   }
 
-  const std::vector<PlayerMove> &DefaultReversiSession::getMoves() const {
+  const std::vector<PlayerMoveDiff> &DefaultReversiSession::getMoves() const {
     return this->engine.getMoves();
   }
 
