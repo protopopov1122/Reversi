@@ -50,7 +50,15 @@ namespace Reversi::Frontend {
     }
 
     wxWindow *getSettings(wxWindow *parent, wxWindowID id) override {
-      return nullptr;
+      wxPanel *settingsPanel = new wxPanel(parent, id);
+      wxFlexGridSizer *sizer = new wxFlexGridSizer(2);
+      settingsPanel->SetSizer(sizer);
+      wxButton *undoButton = new wxButton(settingsPanel, wxID_ANY, "Undo move");
+      sizer->Add(undoButton);
+      undoButton->Bind(wxEVT_BUTTON, [this](wxCommandEvent &evt) {
+        this->engine.undoMove(1);
+      });
+      return settingsPanel;
     }
   };
 
@@ -100,6 +108,12 @@ namespace Reversi::Frontend {
         this->ai.setRandomized(rand);
       });
       randomizeCheckbox->SetValue(this->randomizeAi);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, ""));
+      wxButton *undoButton = new wxButton(settingsPanel, wxID_ANY, "Undo move");
+      sizer->Add(undoButton);
+      undoButton->Bind(wxEVT_BUTTON, [this](wxCommandEvent &evt) {
+        this->engine.undoMove(2);
+      });
       return settingsPanel;
     }
    private:
@@ -171,6 +185,12 @@ namespace Reversi::Frontend {
         this->aiBlack.setRandomized(rand);
       });
       randomizeCheckbox->SetValue(this->randomizeAi);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, ""));
+      wxButton *undoButton = new wxButton(settingsPanel, wxID_ANY, "Undo move");
+      sizer->Add(undoButton);
+      undoButton->Bind(wxEVT_BUTTON, [this](wxCommandEvent &evt) {
+        this->engine.undoMove(1);
+      });
       return settingsPanel;
     }
    private:

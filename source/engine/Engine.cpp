@@ -4,14 +4,10 @@
 namespace Reversi {
 
   GameEngine::GameEngine()
-    : state() {}
+    : state(), baseState() {}
   
   GameEngine::GameEngine(const State &state)
-    : state(state) {}
-
-  void GameEngine::setState(const State &state) {
-    this->state = state;
-  }
+    : state(state), baseState(state) {}
 
   const State &GameEngine::getState() const {
     return this->state;
@@ -19,6 +15,17 @@ namespace Reversi {
 
   const std::vector<PlayerMove> &GameEngine::getMoves() const {
     return this->moves;
+  }
+
+  void GameEngine::undoMove(std::size_t count) {
+    while (count-- > 0 && !this->moves.empty()) {
+      this->moves.pop_back();
+    }
+    this->state = baseState;
+    for (PlayerMove move : this->moves) {
+      this->state.apply(move.second);
+    }
+    this->stateUpdated();
   }
 
   void GameEngine::stateUpdated() {

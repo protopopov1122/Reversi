@@ -17,12 +17,13 @@ namespace Reversi {
     GameEngine();
     GameEngine(const State &);
     virtual ~GameEngine() = default;
-    void setState(const State &);
     const State &getState() const;
     const std::vector<PlayerMove> &getMoves() const;
+    void undoMove(std::size_t = 0);
    protected:
     void stateUpdated();
   
+    State baseState;
     State state;
     std::vector<PlayerMove> moves;
   };
