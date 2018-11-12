@@ -10,8 +10,6 @@
 
 namespace Reversi::Frontend {
 
-  static constexpr bool DISPLAY_MOVE_METRIC = false;
-
   wxDEFINE_EVENT(ReversiFrameUpdateEvent, wxThreadEvent);
 
   ReversiFrame::ReversiFrame(std::string title)
@@ -214,9 +212,9 @@ namespace Reversi::Frontend {
       Position move = moves.at(i).move;
       this->moveList->SetItem(i, 2, std::string(1, move.getColumn()) + std::to_string(move.getRow()));
       if constexpr (DISPLAY_MOVE_METRIC) {
-        if (!isinf(moves.at(i).metric)) {
+        if (!isinf(moves.at(i).getMetric())) {
           std::stringstream stream;
-          stream << std::fixed << std::setprecision(2) << moves.at(i).metric;
+          stream << std::fixed << std::setprecision(2) << moves.at(i).getMetric();
           this->moveList->SetItem(i, 3, stream.str() + "%");
         }
       }

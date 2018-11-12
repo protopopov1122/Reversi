@@ -1,6 +1,7 @@
 #ifndef REVERSI_ENGINE_ENGINE_H_
 #define REVERSI_ENGINE_ENGINE_H_
 
+#include "reversi/config.h"
 #include "reversi/engine/Event.h"
 #include "reversi/engine/AI.h"
 #include "reversi/engine/Tree.h"
@@ -11,14 +12,38 @@
 namespace Reversi {
 
   using PlayerMove = std::pair<Player, Position>;
-  struct PlayerMoveDiff {
-    PlayerMoveDiff(Player player, Position move, float metric)
+
+  template <bool M, typename Enable = void>
+  struct PlayerMoveDiffImpl {};
+
+  template <bool M>
+  struct PlayerMoveDiffImpl<M, typename std::enable_if<M>::type> {
+    PlayerMoveDiffImpl(Player player, Position move, float metric = 0.0f)
       : player(player), move(move), metric(metric) {}
+
+    float getMetric() const {
+      return this->metric;
+    }
 
     Player player;
     Position move;
     float metric;
   };
+
+  template <bool M>
+  struct PlayerMoveDiffImpl<M, typename std::enable_if<!M>::type> {
+    PlayerMoveDiffImpl(Player player, Position move, float metric = 0.0f)
+      : player(player), move(move) {}
+
+    float getMetric() const {
+      return 0;
+    }
+
+    Player player;
+    Position move;
+  };
+
+  using PlayerMoveDiff = PlayerMoveDiffImpl<DISPLAY_MOVE_METRIC>;
 
   class GameEngine : public EventListener<PlayerMove>, public EventSource<State> {
    public:
@@ -30,7 +55,7 @@ namespace Reversi {
     void undoMove(std::size_t = 0);
    protected:
     void stateUpdated();
-  
+
     State baseState;
     State state;
     std::vector<PlayerMoveDiff> moves;

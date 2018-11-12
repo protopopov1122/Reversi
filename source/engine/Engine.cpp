@@ -47,15 +47,20 @@ namespace Reversi {
     Player player;
     std::tie(player, position) = move;
     if (this->state.getPlayer() == player && StateHelpers::isMovePossible(this->state, player, position)) {
-      int player = static_cast<int>(this->state.getPlayer());
-      int32_t old_metric = this->state.getBoard().getPlainMetric();
-      this->state.apply(position);
-      int32_t new_metric = this->state.getBoard().getPlainMetric();
-      float move_metric = INFINITY;
-      if (old_metric != 0) {
-        move_metric = player * static_cast<float>(new_metric - old_metric) / abs(old_metric) * 100;
+      if constexpr (DISPLAY_MOVE_METRIC) {
+        int player = static_cast<int>(this->state.getPlayer());
+        int32_t old_metric = this->state.getBoard().getPlainMetric();
+        this->state.apply(position);
+        int32_t new_metric = this->state.getBoard().getPlainMetric();
+        float move_metric = INFINITY;
+        if (old_metric != 0) {
+          move_metric = player * static_cast<float>(new_metric - old_metric) / abs(old_metric) * 100;
+        }
+        this->moves.push_back(PlayerMoveDiff(move.first, move.second, move_metric));
+      } else {
+        this->state.apply(position);
+        this->moves.push_back(PlayerMoveDiff(move.first, move.second));
       }
-      this->moves.push_back(PlayerMoveDiff(move.first, move.second, move_metric));
       if (!StateHelpers::hasMoves(this->state, this->state.getPlayer()) && StateHelpers::hasMoves(this->state, invertPlayer(this->state.getPlayer()))) {
         this->state.next();
       }
