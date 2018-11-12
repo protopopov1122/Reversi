@@ -13,34 +13,50 @@ namespace Reversi {
 
   using PlayerMove = std::pair<Player, Position>;
 
-  template <bool M, typename Enable = void>
-  struct PlayerMoveDiffImpl {};
-
   template <bool M>
-  struct PlayerMoveDiffImpl<M, typename std::enable_if<M>::type> {
+  class PlayerMoveDiffImpl {};
+
+  class PlayerMoveDiffBase {
+   public:
+    PlayerMoveDiffBase(Player player, Position move)
+      : player(player), move(move) {}
+
+    Player getPlayer () const {
+      return this->player;
+    }
+
+    Position getMove () const {
+      return this->move;
+    }
+
+   private:
+    Player player;
+    Position move;
+  };
+
+  template <>
+  class PlayerMoveDiffImpl<true> : public PlayerMoveDiffBase {
+   public:
     PlayerMoveDiffImpl(Player player, Position move, float metric = 0.0f)
-      : player(player), move(move), metric(metric) {}
+      : PlayerMoveDiffBase(player, move), metric(metric) {}
 
     float getMetric() const {
       return this->metric;
     }
 
-    Player player;
-    Position move;
+   private:
     float metric;
   };
 
-  template <bool M>
-  struct PlayerMoveDiffImpl<M, typename std::enable_if<!M>::type> {
+  template <>
+  class PlayerMoveDiffImpl<false> : public PlayerMoveDiffBase {
+   public:
     PlayerMoveDiffImpl(Player player, Position move, float metric = 0.0f)
-      : player(player), move(move) {}
+      : PlayerMoveDiffBase(player, move) {}
 
     float getMetric() const {
       return 0;
     }
-
-    Player player;
-    Position move;
   };
 
   using PlayerMoveDiff = PlayerMoveDiffImpl<DISPLAY_MOVE_METRIC>;

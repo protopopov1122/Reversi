@@ -208,8 +208,8 @@ namespace Reversi::Frontend {
       wxListItem item;
       this->moveList->InsertItem(i, item);
       this->moveList->SetItem(i, 0, std::to_string(i + 1));
-      this->moveList->SetItem(i, 1, moves.at(i).player == Player::White ? "White" : "Black");
-      Position move = moves.at(i).move;
+      this->moveList->SetItem(i, 1, moves.at(i).getPlayer() == Player::White ? "White" : "Black");
+      Position move = moves.at(i).getMove();
       this->moveList->SetItem(i, 2, std::string(1, move.getColumn()) + std::to_string(move.getRow()));
       if constexpr (DISPLAY_MOVE_METRIC) {
         if (!isinf(moves.at(i).getMetric())) {

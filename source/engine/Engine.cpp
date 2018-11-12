@@ -24,7 +24,7 @@ namespace Reversi {
     }
     this->state = baseState;
     for (PlayerMoveDiff move : this->moves) {
-      this->state.apply(move.move);
+      this->state.apply(move.getMove());
     }
     this->stateUpdated();
   }

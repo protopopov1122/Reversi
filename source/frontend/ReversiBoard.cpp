@@ -67,7 +67,7 @@ namespace Reversi::Frontend {
         dc.SetBrush(*wxTRANSPARENT_BRUSH);
         PlayerMoveDiff move = this->session->getMoves().back();
         std::vector<Position> position {
-          move.move
+          move.getMove()
         };
         this->renderer.highlight(dc, this->GetSize(), position);
       }
