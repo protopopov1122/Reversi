@@ -113,9 +113,9 @@ namespace Reversi::Frontend {
       wxPanel *settingsPanel = new wxPanel(parent, id);
       wxFlexGridSizer *sizer = new wxFlexGridSizer(2);
       settingsPanel->SetSizer(sizer);
-      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Human-AI"), 0, wxALIGN_CENTER | wxALIGN_LEFT);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Human-AI"), 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT);
       sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, ""));
-      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Difficulty: "), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Difficulty: "), 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT);
       wxSpinCtrl *difficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
         wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, 10, this->ai.getDifficulty());
       sizer->Add(difficulty, 0, wxALIGN_CENTER);
@@ -182,16 +182,16 @@ namespace Reversi::Frontend {
       wxPanel *settingsPanel = new wxPanel(parent, id);
       wxFlexGridSizer *sizer = new wxFlexGridSizer(2);
       settingsPanel->SetSizer(sizer);
-      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "AI-AI"), 0, wxALIGN_CENTER | wxALIGN_LEFT);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "AI-AI"), 0, wxALIGN_CENTER_VERTICAL | wxALIGN_LEFT);
       sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, ""));
-      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "White difficulty: "), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "White difficulty: "), 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT);
       wxSpinCtrl *whiteDifficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
         wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, 10, this->aiWhite.getDifficulty());
       sizer->Add(whiteDifficulty, 0, wxALIGN_CENTER);
       whiteDifficulty->Bind(wxEVT_SPINCTRL, [this, whiteDifficulty](wxCommandEvent &evt) {
         this->aiWhite.setDifficulty(whiteDifficulty->GetValue());
       });
-      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Black difficulty: "), 0, wxALIGN_CENTER | wxALIGN_RIGHT);
+      sizer->Add(new wxStaticText(settingsPanel, wxID_ANY, "Black difficulty: "), 0, wxALIGN_CENTER_VERTICAL | wxALIGN_RIGHT);
       wxSpinCtrl *blackDifficulty = new wxSpinCtrl(settingsPanel, wxID_ANY, wxEmptyString, wxDefaultPosition,
         wxDefaultSize, wxSP_ARROW_KEYS | wxALIGN_RIGHT, 1, 10, this->aiBlack.getDifficulty());
       sizer->Add(blackDifficulty, 0, wxALIGN_CENTER);

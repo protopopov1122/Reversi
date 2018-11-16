@@ -79,9 +79,11 @@ namespace Reversi::Frontend {
         this->settingsPanel->GetSizer()->Insert(2, this->sessionSettings, 0, wxALL | wxEXPAND);
         this->Layout();
       }
+      this->updateStatistics(this->session->getState());
       this->boardWindow->update();
       this->Refresh();
-      this->updateStatistics(this->session->getState());
+	  this->moveList->ClearBackground();
+	  this->moveList->Update();
     } else {
       this->boardWindow->setSession(nullptr);
       this->SetStatusText("", 0);
