@@ -23,6 +23,7 @@
 #include <wx/sizer.h>
 #include <wx/menu.h>
 #include <wx/stattext.h>
+#include <wx/aboutdlg.h>
 #include <iostream>
 #include <algorithm>
 #include <sstream>
@@ -111,6 +112,8 @@ namespace Reversi::Frontend {
     this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnAIAIGame, this, idAIAI);
 
     gameMenu->AppendSeparator();
+    wxMenuItem *aboutItem = gameMenu->Append(wxID_ABOUT, "About");
+    this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnAbout, this, wxID_ABOUT);
     wxMenuItem *quitItem = gameMenu->Append(wxID_EXIT, "Quit");
     this->Bind(wxEVT_COMMAND_MENU_SELECTED, &ReversiFrame::OnQuit, this, wxID_EXIT);
     this->SetMenuBar(menuBar);
@@ -164,6 +167,29 @@ namespace Reversi::Frontend {
 
   void ReversiFrame::OnQuit(wxCommandEvent &evt) {
     this->Destroy();
+  }
+
+  void ReversiFrame::OnAbout(wxCommandEvent &evt) {
+    wxAboutDialogInfo aboutInfo;
+    aboutInfo.SetName("Reversi");
+    aboutInfo.SetVersion("0.9");
+    aboutInfo.SetDescription("Reversi (Othello) game implementation");
+    aboutInfo.SetCopyright("(C) 2018");
+    aboutInfo.SetWebSite("https://github.com/protopopov1122/Reversi");
+    aboutInfo.SetLicense("Copyright 2018 Jevgenijs Protopopovs\n\n"
+      "Redistribution and use in source and binary forms, with or without modification,\nare permitted provided that the following conditions are met:\n"
+      "1. Redistributions of source code must retain the above copyright notice, this\nlist of conditions and the following disclaimer.\n"
+      "2. Redistributions in binary form must reproduce the above copyright notice, this\nlist of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.\n"
+      "3. Neither the name of the copyright holder nor the names of its contributors may be\nused to endorse or promote products derived from this software without specific prior written permission.\n\n"
+      "THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS\n\"AS IS\" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT\n"
+      "LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR\nA PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE\n"
+      "COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,\nINCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,\n"
+      "BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS\nOF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)\n"
+      "HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,\nSTRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING\n"
+      "IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE\nPOSSIBILITY OF SUCH DAMAGE."
+    );
+    aboutInfo.AddDeveloper("Jevgenijs Protopopovs");
+    wxAboutBox(aboutInfo);
   }
 
   void ReversiFrame::OnUpdate(wxThreadEvent &evt) {
