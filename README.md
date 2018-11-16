@@ -3,10 +3,6 @@
 This project is a reversi game implementation. Currently it includes AI engine (employs Negamax, Alpha-Beta pruning and node caching) and user
 interface with several game modes (human-human, human-ai, ai-ai).
 
-TODO:
-* add reversi-specific evaluation heuristics to the engine
-* extend UI - add game tree viewer for ai modes and display current state assesment
-
 ### Installation
 Project is tested on Linux and Windows operating systems. Project uses CMake to build, code is written using C++17 standard so compatible compiler should be used.
 The only runtime dependency is wxWidgets library (minimal version 3.0.4).
