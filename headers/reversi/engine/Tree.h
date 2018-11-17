@@ -80,8 +80,7 @@ namespace Reversi {
   class Node {
    public:
     Node(const State &);
-    std::optional<ChildNode> build(std::size_t, const Strategy &, bool = false, bool = true);
-    std::optional<ChildNode> build(std::size_t, const Strategy &, FixedThreadPool &, bool = false, bool = true);
+    std::optional<ChildNode> build(std::size_t, const Strategy &, FixedThreadPool &, bool = false);
     int32_t getMetric() const;
     std::size_t getDepth() const;
     const State &getState() const;
@@ -95,8 +94,10 @@ namespace Reversi {
     int32_t traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache> = nullptr, bool = true);
     int32_t traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache> = nullptr, bool = true);
    private:
-    int32_t zeroDepth(int, std::function<int32_t (const State &)>);
-    int32_t noMoves(std::size_t, int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache>);
+    int32_t directMetric(int, std::function<int32_t (const State &)>);
+    int32_t noMoves(int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache>);
+    int32_t evaluateMetric(std::vector<Position> &, int32_t, int32_t, int, const Strategy &, std::shared_ptr<NodeCache>);
+    int32_t evaluateMetric(std::vector<Position> &, int32_t, int32_t, int, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache>);
     std::optional<ChildNode> addChild(Position, const State &, std::size_t, int32_t, int32_t, int, const Strategy &, std::shared_ptr<NodeCache>);
     void generateFutures(std::vector<Position> &, std::vector<std::future<std::shared_ptr<Node>>> &,
       std::size_t, int32_t, int32_t, int, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache>);

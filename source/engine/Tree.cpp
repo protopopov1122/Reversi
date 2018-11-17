@@ -20,7 +20,9 @@
 */
 
 #include "reversi/engine/Tree.h"
+#include "reversi/engine/Engine.h"
 #include <iostream>
+#include <iomanip>
 #include <random>
 
 namespace Reversi {
@@ -82,21 +84,8 @@ namespace Reversi {
     return count;
   }
 
-  std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, bool randomize, bool useCache) {
-    this->depth = depth;
-    std::shared_ptr<NodeCache> cache = useCache ? std::make_shared<NodeCache>() : nullptr;
-    this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, cache, !randomize);
-    if (randomize) {
-      this->randomizeOptimal();
-    } else {
-      this->selectOptimal(strategy);
-    }
-    return this->optimal;
-  }
-
-  std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, FixedThreadPool &pool, bool randomize, bool useCache) {
-    this->depth = depth;
-    std::shared_ptr<NodeCache> cache = useCache ? std::make_shared<NodeCache>() : nullptr;
+  std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, FixedThreadPool &pool, bool randomize) {
+    std::shared_ptr<NodeCache> cache = std::make_shared<NodeCache>();
     this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, pool, cache, !randomize);
     if (randomize) {
       this->randomizeOptimal();
@@ -108,50 +97,20 @@ namespace Reversi {
 
   int32_t Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy,
     std::shared_ptr<NodeCache> cache, bool useAlphaBeta) {
+
     this->depth = depth;
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
-    if (depth == 0) {
-      return this->zeroDepth(color, score_assess);
+
+    if (depth == 0 || StateHelpers::isGameFinished(this->state)) {
+      return this->directMetric(color, score_assess);
     } else {
       std::vector<Position> moves;
       this->state.getBoard().getMoves(moves, this->state.getPlayer());
       if (moves.empty()) {
-        return this->noMoves(depth, alpha, beta, color, abortOnNoMoves, strategy, cache);
+        return this->noMoves(alpha, beta, color, abortOnNoMoves, strategy, cache);
+      } else {
+        return this->evaluateMetric(moves, alpha, beta, color, strategy, cache);
       }
-
-      this->metric = INT32_MIN;
-      Move bestMove;
-      std::shared_ptr<Node> best_child = nullptr;
-      State base(this->state);
-      for (Position position : moves) {
-        base.apply(position);
-        if (cache && cache->has(base, depth - 1)) {
-          std::shared_ptr<Node> child = cache->get(base);
-          this->children.push_back(ChildNode(position, child));
-          if (child->getMetric() > this->metric) {
-            this->metric = child->getMetric();
-            bestMove = position;
-            best_child = child;
-          }
-        } else {
-          auto child_best = this->addChild(position, base, depth, alpha, beta, color, strategy, cache);
-          if (child_best) {
-            std::tie(bestMove, best_child) = child_best.value().asTuple();
-          }
-        }
-        base = this->state;
-        
-        if (this->metric > alpha) {
-          alpha = this->metric;
-        }
-        if (alpha >= beta && useAlphaBeta) {
-          break;
-        }
-      }
-      if (best_child) {
-        this->optimal = ChildNode(bestMove, best_child);
-      }
-      return this->metric;
     }
   }
 
@@ -160,41 +119,15 @@ namespace Reversi {
     this->depth = depth;
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (depth == 0) {
-      return this->zeroDepth(color, score_assess);
+      return this->directMetric(color, score_assess);
     } else {
       std::vector<Position> moves;
       this->state.getBoard().getMoves(moves, this->state.getPlayer());
       if (moves.empty()) {
-        return this->noMoves(depth, alpha, beta, color, abortOnNoMoves, strategy, cache);
+        return this->noMoves(alpha, beta, color, abortOnNoMoves, strategy, cache);
+      } else {
+        return this->evaluateMetric(moves, alpha, beta, color, strategy, pool, cache);
       }
-
-      std::vector<std::future<std::shared_ptr<Node>>> nodeFutures;
-      this->generateFutures(moves, nodeFutures, depth, alpha, beta, color, strategy, pool, cache);
-      
-
-      this->metric = INT32_MIN;
-      Move bestMove;
-      std::shared_ptr<Node> best_child = nullptr;
-      for (std::size_t i = 0; i < nodeFutures.size(); i++) {
-        auto nodeFuture = std::move(nodeFutures.at(i));
-        Position position = moves.at(i);
-        auto child_best = this->addChild(std::move(nodeFuture), position);
-        if (child_best) {
-          std::tie(bestMove, best_child) = child_best.value().asTuple();
-        }
-
-        if (this->metric > alpha) {
-          alpha = this->metric;
-        }
-        if (alpha >= beta && useAlphaBeta) {
-          break;
-        }
-      }
-
-      if (best_child) {
-        this->optimal = ChildNode(bestMove, best_child);
-      }
-      return this->metric;
     }
   }
 
@@ -212,12 +145,12 @@ namespace Reversi {
   }
 
 
-  int32_t Node::zeroDepth(int color, std::function<int32_t (const State &)> score_assess) {
+  int32_t Node::directMetric(int color, std::function<int32_t (const State &)> score_assess) {
     this->metric = color * score_assess(this->state);
     return this->metric;
   }
 
-  int32_t Node::noMoves(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
+  int32_t Node::noMoves(int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
     if (abortOnNoMoves) {
       this->metric = color * score_assess(this->state);
@@ -226,18 +159,86 @@ namespace Reversi {
       State base(this->state);
       base.next();
       std::shared_ptr<Node> child = std::make_shared<Node>(base);
-      this->metric = -child->traverse(depth - 1, -beta, -alpha, -color, true, strategy, cache);
+      this->metric = -child->traverse(this->depth - 1, -beta, -alpha, -color, true, strategy, cache);
       this->optimal = ChildNode(Move(), child);
       this->children.push_back(ChildNode(Move(), child)); // TODO
       return this->metric;
     }
   }
 
+  int32_t Node::evaluateMetric(std::vector<Position> &moves, int32_t alpha, int32_t beta, int color,
+                               const Strategy &strategy, FixedThreadPool &pool, std::shared_ptr<NodeCache> cache) {
+      std::vector<std::future<std::shared_ptr<Node>>> nodeFutures;
+      this->generateFutures(moves, nodeFutures, this->depth, alpha, beta, color, strategy, pool, cache);
+
+      this->metric = INT32_MIN;
+      Move bestMove;
+      std::shared_ptr<Node> best_child = nullptr;
+      for (std::size_t i = 0; i < nodeFutures.size(); i++) {
+        Position position = moves.at(i);
+        auto child_best = this->addChild(std::move(nodeFutures.at(i)), position);
+        if (child_best) {
+          std::tie(bestMove, best_child) = child_best.value().asTuple();
+        }
+
+        if (this->metric > alpha) {
+          alpha = this->metric;
+        }
+        if (alpha >= beta) {
+          break;
+        }
+      }
+
+      if (best_child) {
+        this->optimal = ChildNode(bestMove, best_child);
+      }
+      return this->metric;
+  }
+
+  int32_t Node::evaluateMetric(std::vector<Position> &moves, int32_t alpha, int32_t beta, int color, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
+    this->metric = INT32_MIN;
+    Move bestMove;
+    std::shared_ptr<Node> best_child = nullptr;
+    State base(this->state);
+    for (Position position : moves) {
+      base.apply(position);
+      if (cache && cache->has(base, this->depth - 1)) {
+        std::shared_ptr<Node> child = cache->get(base);
+        this->children.push_back(ChildNode(position, child));
+        int32_t child_metric = -child->getMetric();
+        if (child_metric > this->metric) {
+          this->metric = child_metric;
+          bestMove = position;
+          best_child = child;
+        }
+      } else {
+        auto child_best = this->addChild(position, base, this->depth, alpha, beta, color, strategy, cache);
+        if (child_best) {
+          std::tie(bestMove, best_child) = child_best.value().asTuple();
+        }
+      }
+      base = this->state;
+      
+      if (this->metric > alpha) {
+        alpha = this->metric;
+      }
+      if (alpha >= beta) {
+        break;
+      }
+    }
+    if (best_child) {
+      this->optimal = ChildNode(bestMove, best_child);
+    }
+    return this->metric;
+  }
+
   std::optional<ChildNode> Node::addChild(Position position, const State &base, std::size_t depth, int32_t alpha, int32_t beta, int color, const Strategy &strategy,
-    std::shared_ptr<NodeCache> cache) {
+                                          std::shared_ptr<NodeCache> cache) {
+
     std::optional<ChildNode> best;
     std::shared_ptr<Node> child = std::make_shared<Node>(base);
-    int32_t child_metric = -child->traverse(depth - 1, -beta, -alpha, -color, false, strategy, cache);
+    child->traverse(depth - 1, -beta, -alpha, -color, false, strategy, cache);
+    int32_t child_metric = -child->getMetric();
     if (child_metric > this->metric) {
       this->metric = child_metric;
       best = ChildNode(position, child);
