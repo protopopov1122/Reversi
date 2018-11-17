@@ -20,6 +20,7 @@
 */
 
 #include "reversi/engine/Engine.h"
+#include "reversi/engine/Logging.h"
 #include <iostream>
 #include <cmath>
 
@@ -68,6 +69,9 @@ namespace Reversi {
     Player player;
     std::tie(player, position) = move;
     if (this->state.getPlayer() == player && StateHelpers::isMovePossible(this->state, player, position)) {
+      Logger::log("Game", [&](auto &out) {
+        out << (this->state.getPlayer() == Player::White ? "White" : "Black") << " move - " << position;
+      });
       if constexpr (DISPLAY_MOVE_METRIC) {
         int player = static_cast<int>(this->state.getPlayer());
         int32_t old_metric = this->state.getBoard().getPlainMetric();

@@ -20,10 +20,15 @@
 */
 
 #include "reversi/engine/Threads.h"
+#include "reversi/engine/Logging.h"
+#include <iostream>
 
 namespace Reversi {
 
   FixedThreadPool::FixedThreadPool(std::size_t thread_count) {
+    Logger::log("Threads", [&](auto &out) {
+      out << "Starting new thread #" << this << " pool of " << thread_count << " threads";
+    });
     this->spawnThreads(thread_count);
   }
 
@@ -33,6 +38,9 @@ namespace Reversi {
     this->queue_cond.notify_all();
     this->queue_cond.wait(lock, [&]() {
       return this->threads.empty();
+    });
+    Logger::log("Threads", [&](auto &out) {
+      out << "Closed thread pool #" << this;
     });
   }
 

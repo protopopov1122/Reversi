@@ -20,6 +20,7 @@
 */
 
 #include "reversi/engine/Engine.h"
+#include "reversi/engine/Logging.h"
 
 namespace Reversi {
 
@@ -69,12 +70,22 @@ namespace Reversi {
 
   void AIPlayer::aiTurn(const State &state) {
     this->active = true;
-    std::thread thread([&]() {
+    Logger::log("AI", [&](auto &out)  {
+      out << "AI starts lookup. Maximal search depth is " << this->difficulty;
+    });
+    auto duration = Logger::measureTime();
+    std::thread thread([this, duration, state]() {
       std::function<int32_t (const State &)> reduce = StateHelpers::assessState;
       Strategy strat = {reduce, reduce};
       Node root(state);
       auto move = root.build(this->difficulty, strat, this->threads, this->randomized);
       this->active = false;
+      duration();
+      auto realDuration = duration().count();
+      Logger::log("AI", [&](auto &out) {
+        std::size_t node_count = root.getSubNodeCount();
+        out << "AI finished lookup after " << realDuration << " microseconds; traversed " << node_count << " nodes";
+      });
       if (move && move.value().move) {
         this->engine.receiveEvent(PlayerMove(state.getPlayer(), move.value().move.value()));
       } else {

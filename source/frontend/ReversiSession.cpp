@@ -20,7 +20,9 @@
 */
 
 #include "reversi/frontend/ReversiSession.h"
+#include "reversi/engine/Logging.h"
 #include <algorithm>
+#include <iostream>
 #include <wx/spinctrl.h>
 
 namespace Reversi::Frontend {
@@ -233,18 +235,30 @@ namespace Reversi::Frontend {
   };
 
   std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::Human_Human = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
+    Logger::log("Session", [](auto &out) {
+      out << "Human-human game session";
+    });
     return std::make_unique<ReversiHumanHumanSession>(state);
   });
 
   std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::Human_AI = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
+    Logger::log("Session", [](auto &out) {
+      out << "Human-AI game session";
+    });
     return std::make_unique<ReversiHumanAISession>(state.getPlayer(), state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY, false);
   });
 
   std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::AI_Human = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
+    Logger::log("Session", [](auto &out) {
+      out << "AI-human game session";
+    });
     return std::make_unique<ReversiHumanAISession>(invertPlayer(state.getPlayer()), state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY, false);
   });
 
   std::unique_ptr<ReversiSessionFactory> ReversiSessionFactory::AI_AI = std::make_unique<LambdaReversiSessionFactory>([](const State &state) {
+    Logger::log("Session", [](auto &out) {
+      out << "AI-AI game session";
+    });
     return std::make_unique<ReversiAIAISession>(state, DefaultReversiSession::DEFAULT_AI_DIFFICULTY, DefaultReversiSession::DEFAULT_AI_DIFFICULTY, true);
   });
 

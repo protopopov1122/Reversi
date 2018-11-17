@@ -86,6 +86,7 @@ namespace Reversi {
     std::size_t getDepth() const;
     const State &getState() const;
     std::optional<ChildNode> getOptimalChild() const;
+    std::size_t getSubNodeCount() const;
 
     friend std::ostream &operator<<(std::ostream &, const Node &);
     static std::ostream &dump(std::ostream &, const Node &, std::string = "\t", std::string = "");

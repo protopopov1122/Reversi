@@ -74,6 +74,14 @@ namespace Reversi {
     return this->optimal;
   }
 
+  std::size_t Node::getSubNodeCount() const {
+    std::size_t count = 0;
+    for (const auto &child : this->children) {
+      count += 1 + child.node->getSubNodeCount();
+    }
+    return count;
+  }
+
   std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, bool randomize, bool useCache) {
     this->depth = depth;
     std::shared_ptr<NodeCache> cache = useCache ? std::make_shared<NodeCache>() : nullptr;

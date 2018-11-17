@@ -20,6 +20,7 @@
 */
 
 #include "reversi/frontend/ReversiFrame.h"
+#include "reversi/engine/Logging.h"
 #include <wx/sizer.h>
 #include <wx/menu.h>
 #include <wx/stattext.h>
@@ -239,6 +240,9 @@ namespace Reversi::Frontend {
     this->SetStatusText(std::to_string(whiteScore) + "x" + std::to_string(blackScore), 0);
     this->SetStatusText("", 1);
     if (this->session->isClosing()) {
+      Logger::log("Session", [&](auto &out) {
+        out << "Session closed with score " << whiteScore << "x" << blackScore;
+      });
       if (whiteScore > blackScore) {
         wxMessageBox("White won!", "", wxOK | wxICON_INFORMATION);
         this->SetStatusText("White won!", 1);

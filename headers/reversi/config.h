@@ -24,6 +24,7 @@
 #define REVERSI_CONFIG_H_
 
 namespace Reversi {
+  static constexpr bool ENABLE_LOGGING = false;
   static constexpr bool DISPLAY_MOVE_METRIC = false;    // Display movement assessment metric. Currently not so useful.
 }
 
