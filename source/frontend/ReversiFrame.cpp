@@ -26,6 +26,7 @@
 #include <wx/stattext.h>
 #include <wx/aboutdlg.h>
 #include <iostream>
+#include <sstream>
 #include <algorithm>
 #include <sstream>
 #include <iomanip>
@@ -53,14 +54,18 @@ namespace Reversi::Frontend {
     this->initMenu();
     this->initMoveList();
     
-    this->CreateStatusBar(2);
+    this->CreateStatusBar(3);
     this->Bind(ReversiFrameUpdateEvent, &ReversiFrame::OnUpdate, this);
     this->Bind(wxEVT_SIZE, &ReversiFrame::OnResize, this);
     this->Bind(wxEVT_MAXIMIZE, &ReversiFrame::OnMaximize, this);
+    this->Bind(wxEVT_TIMER, &ReversiFrame::updateDuration, this);
   
     this->updateListener.setCallback([this](const State &state) {
       wxPostEvent(this, wxThreadEvent(ReversiFrameUpdateEvent));
     });
+
+    wxTimer *updateDurationTimer = new wxTimer(this);
+    updateDurationTimer->Start(1000);
   }
 
   void ReversiFrame::newSession(ReversiSessionFactory &factory, const State &state) {
@@ -240,6 +245,7 @@ namespace Reversi::Frontend {
     this->SetStatusText(std::to_string(whiteScore) + "x" + std::to_string(blackScore), 0);
     this->SetStatusText("", 1);
     if (this->session->isClosing()) {
+      this->sessionSettings->Enable(false);
       Logger::log("Session", [&](auto &out) {
         out << "Session closed with score " << whiteScore << "x" << blackScore;
       });
@@ -271,6 +277,24 @@ namespace Reversi::Frontend {
           this->moveList->SetItem(i, 3, stream.str() + "%");
         }
       }
+    }
+  }
+
+  void ReversiFrame::updateDuration(wxTimerEvent &evt) {
+    if (this->session) {
+      std::chrono::milliseconds duration = this->session->getDuration();
+      auto hours = std::chrono::duration_cast<std::chrono::hours>(duration);
+      duration -= hours;
+      auto minutes = std::chrono::duration_cast<std::chrono::minutes>(duration);
+      duration -= minutes;
+      auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+      std::stringstream ss;
+      ss << std::setfill('0') << std::setw(2) << hours.count() << ':';
+      ss << std::setfill('0') << std::setw(2) << minutes.count() << ':';
+      ss << std::setfill('0') << std::setw(2) << seconds.count();
+      this->SetStatusText(ss.str(), 2);
+    } else {
+      this->SetStatusText("", 2);
     }
   }
 }

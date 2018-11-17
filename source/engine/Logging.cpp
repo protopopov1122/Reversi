@@ -1,4 +1,5 @@
 #include "reversi/engine/Logging.h"
+#include "reversi/config.h"
 #include <iostream>
 
 namespace Reversi {

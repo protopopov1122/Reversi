@@ -24,6 +24,8 @@
 
 #include "reversi/frontend/base.h"
 #include <atomic>
+#include <chrono>
+#include <optional>
 
 namespace Reversi::Frontend {
 
@@ -44,6 +46,7 @@ namespace Reversi::Frontend {
     const State &getState() const override;
     const std::vector<PlayerMoveDiff> &getMoves() const override;
     bool isClosing();
+    std::chrono::milliseconds getDuration();
     virtual wxWindow *getSettings(wxWindow *, wxWindowID) = 0;
     virtual bool isCurrentlyProcessing() = 0;
 
@@ -51,6 +54,8 @@ namespace Reversi::Frontend {
    protected:
     DefaultGameEngine engine;
     bool closed;
+    std::chrono::time_point<std::chrono::system_clock> started;
+    std::optional<std::chrono::time_point<std::chrono::system_clock>> finished;
   };
 
   class ReversiSessionFactory {

@@ -21,6 +21,7 @@
 
 #include "reversi/engine/Engine.h"
 #include "reversi/engine/Logging.h"
+#include "reversi/engine/Time.h"
 
 namespace Reversi {
 
@@ -73,7 +74,7 @@ namespace Reversi {
     Logger::log("AI", [&](auto &out)  {
       out << "AI starts lookup. Maximal search depth is " << this->difficulty;
     });
-    auto duration = Logger::measureTime();
+    auto duration = TimeUtils::stopwatches();
     std::thread thread([this, duration, state]() {
       std::function<int32_t (const State &)> reduce = StateHelpers::assessState;
       Strategy strat = {reduce, reduce};

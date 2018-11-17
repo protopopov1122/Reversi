@@ -26,6 +26,7 @@
 #include "reversi/frontend/ReversiSession.h"
 #include "reversi/frontend/ReversiBoard.h"
 #include <wx/listctrl.h>
+#include <wx/timer.h>
 #include <functional>
 
 namespace Reversi::Frontend {
@@ -56,6 +57,7 @@ namespace Reversi::Frontend {
     
     void updateStatistics(const State &);
     void showMoves(const std::vector<PlayerMoveDiff> &);
+    void updateDuration(wxTimerEvent &);
 
     std::unique_ptr<DefaultReversiSession> session;
     FunctionEventListener<State> updateListener;

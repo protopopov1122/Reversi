@@ -29,10 +29,14 @@ namespace Reversi::Frontend {
 
   const unsigned int DefaultReversiSession::DEFAULT_AI_DIFFICULTY = 5;
 
-  DefaultReversiSession::DefaultReversiSession() : closed(false) {}
+  DefaultReversiSession::DefaultReversiSession() : closed(false) {
+    this->started = std::chrono::system_clock::now();
+  }
 
   DefaultReversiSession::DefaultReversiSession(const State &state)
-    : engine(state), closed(false) {}
+    : engine(state), closed(false) {
+    this->started = std::chrono::system_clock::now();
+  }
   
   GameEngine &DefaultReversiSession::getEngine() {
     return this->engine;
@@ -49,10 +53,21 @@ namespace Reversi::Frontend {
   bool DefaultReversiSession::isClosing() {
     if (!this->closed && StateHelpers::isGameFinished(this->getState())) {
       this->closed = true;
+      this->finished = std::chrono::system_clock::now();
       return true;
     } else {
       return false;
     }
+  }
+
+  std::chrono::milliseconds DefaultReversiSession::getDuration() {
+    std::chrono::time_point<std::chrono::system_clock> end;
+    if (this->finished.has_value()) {
+      end = this->finished.value();
+    } else {
+      end = std::chrono::system_clock::now();
+    }
+    return std::chrono::duration_cast<std::chrono::milliseconds>(end - this->started);
   }
 
   class ReversiHumanHumanSession : public DefaultReversiSession {
