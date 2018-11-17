@@ -41,6 +41,9 @@ namespace Reversi {
   }
 
   void GameEngine::undoMove(std::size_t count) {
+    Logger::log("Game", [&](auto &out) {
+      out << "Undoing " << count << " moves";
+    });
     while (count-- > 0 && !this->moves.empty()) {
       this->moves.pop_back();
     }
