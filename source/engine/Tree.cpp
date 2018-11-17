@@ -282,7 +282,6 @@ namespace Reversi {
       }
     }
     if (best_children.size() > 1) {
-      
       std::uniform_int_distribution<> distribution(0, best_children.size() - 1);
       this->optimal = best_children.at(distribution(random_generator));
     }
