@@ -102,6 +102,7 @@ namespace Reversi {
       std::size_t, int32_t, int32_t, int, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache>);
     std::optional<ChildNode> addChild(std::future<std::shared_ptr<Node>>, Position);
     void randomizeOptimal();
+    void selectOptimal(const Strategy &);
 
     State state;
     std::size_t depth;

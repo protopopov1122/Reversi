@@ -88,6 +88,8 @@ namespace Reversi {
     this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, cache, !randomize);
     if (randomize) {
       this->randomizeOptimal();
+    } else {
+      this->selectOptimal(strategy);
     }
     return this->optimal;
   }
@@ -98,6 +100,8 @@ namespace Reversi {
     this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, pool, cache, !randomize);
     if (randomize) {
       this->randomizeOptimal();
+    } else {
+      this->selectOptimal(strategy);
     }
     return this->optimal;
   }
@@ -284,6 +288,18 @@ namespace Reversi {
     if (best_children.size() > 1) {
       std::uniform_int_distribution<> distribution(0, best_children.size() - 1);
       this->optimal = best_children.at(distribution(random_generator));
+    }
+  }
+
+  void Node::selectOptimal(const Strategy &strategy) {
+    std::function<int32_t (const State &)> score_assess = this->state.getPlayer() == Player::White ? strategy.white : strategy.black;
+    int32_t max_own_metric = score_assess(this->optimal.value().node->getState());
+    for (const auto &child : this->children) {
+      int32_t own_metric = score_assess(child.node->getState());
+      if (child.node->getMetric() == this->metric && own_metric > max_own_metric) {
+        max_own_metric = own_metric;
+        this->optimal = child;
+      }
     }
   }
 
