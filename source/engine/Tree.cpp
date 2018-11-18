@@ -53,6 +53,75 @@ namespace Reversi {
     }
   }
 
+
+
+  void deriveSubstates(const State &state, std::vector<MoveState> &children) {
+    std::vector<Position> moves;
+    state.getBoard().getMoves(moves, state.getPlayer());
+    State base(state);
+    if (moves.empty()) {
+      base.next();
+      children.push_back(std::make_pair(Move(), base));
+    } else {
+      for (Position move : moves) {
+        base.apply(move);
+        children.push_back(std::make_pair(move, base));
+        base = state;
+      }
+    }
+  }
+
+  using ChildNodeGenerator = std::function<ChildNode(Move, const State &, int32_t, int32_t)>;
+  using ChildNodeCallback = std::function<void (ChildNode &)>;
+
+  class ChildNodeSequentialIterator : public ChildNodeIterator {
+   public:
+    ChildNodeSequentialIterator(const State &base, ChildNodeGenerator gen) : index(0), gen(gen) {
+      deriveSubstates(base, this->substates);
+    }
+
+    bool hasNext() override {
+      return this->index < this->substates.size();
+    }
+
+    std::optional<ChildNode> next(int32_t alpha, int32_t beta) override {
+      if (this->index >= this->substates.size()) {
+        return std::optional<ChildNode>();
+      } else {
+        const MoveState &moveState = this->substates.at(this->index++);
+        return this->gen(moveState.first, moveState.second, alpha, beta);
+      }
+    }
+   private:
+    std::vector<MoveState> substates;
+    std::size_t index;
+    ChildNodeGenerator gen;
+  };
+
+  class ChildNodeParallelIterator : public ChildNodeIterator {
+   public:
+    ChildNodeParallelIterator(std::vector<std::future<ChildNode>> &futures, ChildNodeCallback cb)
+      : futures(futures), index(0), cb(cb) {}
+
+    bool hasNext() override {
+      return this->index < this->futures.size();
+    }
+
+    std::optional<ChildNode> next(int32_t alpha, int32_t beta) override {
+      if (this->index >= this->futures.size()) {
+        return std::optional<ChildNode>();
+      } else {
+        ChildNode node = this->futures.at(this->index++).get();
+        cb(node);
+        return node;
+      }
+    }
+   private:
+    std::vector<std::future<ChildNode>> &futures;
+    std::size_t index;
+    ChildNodeCallback cb;
+  };
+
   Node::Node(const State &state)
     : state(state), depth(0), metric(INT32_MIN), optimal() {}
 
@@ -86,7 +155,7 @@ namespace Reversi {
 
   std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, FixedThreadPool &pool, bool randomize) {
     std::shared_ptr<NodeCache> cache = std::make_shared<NodeCache>();
-    this->traverse(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, false, strategy, pool, cache, !randomize);
+    this->traverseParallel(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, strategy, pool, cache);
     if (randomize) {
       this->randomizeOptimal();
     } else {
@@ -95,8 +164,8 @@ namespace Reversi {
     return this->optimal;
   }
 
-  int32_t Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy,
-    std::shared_ptr<NodeCache> cache, bool useAlphaBeta) {
+  int32_t Node::traverseSequential(std::size_t depth, int32_t alpha, int32_t beta, int color, const Strategy &strategy,
+    std::shared_ptr<NodeCache> cache) {
 
     this->depth = depth;
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
@@ -104,44 +173,19 @@ namespace Reversi {
     if (depth == 0 || StateHelpers::isGameFinished(this->state)) {
       return this->directMetric(color, score_assess);
     } else {
-      std::vector<Position> moves;
-      this->state.getBoard().getMoves(moves, this->state.getPlayer());
-      if (moves.empty()) {
-        return this->noMoves(alpha, beta, color, abortOnNoMoves, strategy, cache);
-      } else {
-        return this->evaluateMetric(moves, alpha, beta, color, strategy, cache);
-      }
+      return this->evaluateMetricSequential(alpha, beta, color, strategy, cache);
     }
   }
 
-  int32_t Node::traverse(std::size_t depth, int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, FixedThreadPool &pool,
-    std::shared_ptr<NodeCache> cache, bool useAlphaBeta) {
+  int32_t Node::traverseParallel(std::size_t depth, int32_t alpha, int32_t beta, int color, const Strategy &strategy, FixedThreadPool &pool,
+    std::shared_ptr<NodeCache> cache) {
     this->depth = depth;
     std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
-    if (depth == 0) {
+    if (depth == 0 || StateHelpers::isGameFinished(this->state)) {
       return this->directMetric(color, score_assess);
     } else {
-      std::vector<Position> moves;
-      this->state.getBoard().getMoves(moves, this->state.getPlayer());
-      if (moves.empty()) {
-        return this->noMoves(alpha, beta, color, abortOnNoMoves, strategy, cache);
-      } else {
-        return this->evaluateMetric(moves, alpha, beta, color, strategy, pool, cache);
-      }
+      return this->evaluateMetricParallel(alpha, beta, color, strategy, pool, cache);
     }
-  }
-
-  std::ostream &Node::dump(std::ostream &os, const Node &root, std::string separator, std::string prefix) {
-    const std::vector<ChildNode> &children = root.getChildren();
-    for (const auto &child : children) {
-      os << prefix;
-      if (child.move) {
-        os << prefix << child.move.value() << ' ';
-      }
-      os << child.node->getMetric() << std::endl;
-      Node::dump(os, *child.node, separator, prefix + separator);
-    }
-    return os;
   }
 
 
@@ -150,74 +194,48 @@ namespace Reversi {
     return this->metric;
   }
 
-  int32_t Node::noMoves(int32_t alpha, int32_t beta, int color, bool abortOnNoMoves, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
-    std::function<int32_t (const State &)> score_assess = static_cast<int>(Player::White) == color ? strategy.white : strategy.black;
-    if (abortOnNoMoves) {
-      this->metric = color * score_assess(this->state);
-      return this->metric;
-    } else {
-      State base(this->state);
-      base.next();
-      std::shared_ptr<Node> child = std::make_shared<Node>(base);
-      this->metric = -child->traverse(this->depth - 1, -beta, -alpha, -color, true, strategy, cache);
-      this->optimal = ChildNode(Move(), child);
-      this->children.push_back(ChildNode(Move(), child)); // TODO
-      return this->metric;
-    }
-  }
-
-  int32_t Node::evaluateMetric(std::vector<Position> &moves, int32_t alpha, int32_t beta, int color,
+  int32_t Node::evaluateMetricParallel(int32_t alpha, int32_t beta, int color,
                                const Strategy &strategy, FixedThreadPool &pool, std::shared_ptr<NodeCache> cache) {
-      std::vector<std::future<std::shared_ptr<Node>>> nodeFutures;
-      this->generateFutures(moves, nodeFutures, this->depth, alpha, beta, color, strategy, pool, cache);
-
-      this->metric = INT32_MIN;
-      Move bestMove;
-      std::shared_ptr<Node> best_child = nullptr;
-      for (std::size_t i = 0; i < nodeFutures.size(); i++) {
-        Position position = moves.at(i);
-        auto child_best = this->addChild(std::move(nodeFutures.at(i)), position);
-        if (child_best) {
-          std::tie(bestMove, best_child) = child_best.value().asTuple();
-        }
-
-        if (this->metric > alpha) {
-          alpha = this->metric;
-        }
-        if (alpha >= beta) {
-          break;
-        }
-      }
-
-      if (best_child) {
-        this->optimal = ChildNode(bestMove, best_child);
-      }
-      return this->metric;
+    std::function<void (std::shared_ptr<Node>)> childTraversal = [&](std::shared_ptr<Node> child) {
+      child->traverseSequential(this->depth - 1, -beta, -alpha, -color, strategy, cache);
+    };
+    std::vector<std::future<ChildNode>> nodeFutures;
+    this->generateFutures(nodeFutures, childTraversal, pool);
+    ChildNodeParallelIterator iter(nodeFutures, [&](ChildNode &node) {
+      this->children.push_back(node);
+    });
+    return this->evaluateMetric(iter, alpha, beta);
   }
 
-  int32_t Node::evaluateMetric(std::vector<Position> &moves, int32_t alpha, int32_t beta, int color, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
-    this->metric = INT32_MIN;
-    Move bestMove;
-    std::shared_ptr<Node> best_child = nullptr;
-    State base(this->state);
-    for (Position position : moves) {
-      base.apply(position);
+  int32_t Node::evaluateMetricSequential(int32_t alpha, int32_t beta, int color, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
+    auto childTraversal = [&](std::shared_ptr<Node> child, int32_t alpha, int32_t beta) {
+      child->traverseSequential(this->depth - 1, -beta, -alpha, -color, strategy, cache);
+    };
+    ChildNodeSequentialIterator iter(this->state, [&](Move position, const State &base, int32_t alpha, int32_t beta) {
       if (cache && cache->has(base, this->depth - 1)) {
-        std::shared_ptr<Node> child = cache->get(base);
-        this->children.push_back(ChildNode(position, child));
-        int32_t child_metric = -child->getMetric();
-        if (child_metric > this->metric) {
-          this->metric = child_metric;
-          bestMove = position;
-          best_child = child;
-        }
+        return this->getChildFromCache(position, base, cache);
       } else {
-        auto child_best = this->addChild(position, base, this->depth, alpha, beta, color, strategy, cache);
-        if (child_best) {
-          std::tie(bestMove, best_child) = child_best.value().asTuple();
-        }
+        return this->buildChild(position, base, childTraversal, cache, alpha, beta);
       }
-      base = this->state;
+    });
+    return this->evaluateMetric(iter, alpha, beta);
+  }
+
+  int32_t Node::evaluateMetric(ChildNodeIterator &iter, int32_t alpha, int32_t beta) {
+    this->metric = INT32_MIN;
+    std::optional<ChildNode> bestChild;
+    while (iter.hasNext()) {
+      std::optional<ChildNode> childNodeOpt = iter.next(alpha, beta);
+      if (!childNodeOpt.has_value()) {
+        continue;
+      }
+      ChildNode childNode = childNodeOpt.value();
+      
+      int32_t child_metric = -childNode.node->getMetric();
+      if (child_metric > this->metric) {
+        this->metric = child_metric;
+        bestChild = childNode;
+      }
       
       if (this->metric > alpha) {
         alpha = this->metric;
@@ -226,53 +244,44 @@ namespace Reversi {
         break;
       }
     }
-    if (best_child) {
-      this->optimal = ChildNode(bestMove, best_child);
+    if (bestChild) {
+      this->optimal = bestChild;
     }
     return this->metric;
   }
 
-  std::optional<ChildNode> Node::addChild(Position position, const State &base, std::size_t depth, int32_t alpha, int32_t beta, int color, const Strategy &strategy,
-                                          std::shared_ptr<NodeCache> cache) {
+  ChildNode Node::getChildFromCache(Move move, const State &base, std::shared_ptr<NodeCache> cache) {
+    std::shared_ptr<Node> child = cache->get(base);
+    ChildNode childNode(move, child);
+    this->children.push_back(childNode);
+    return childNode;
+  }
 
-    std::optional<ChildNode> best;
+  ChildNode Node::buildChild(Move position, const State &base, std::function<void (std::shared_ptr<Node>, int32_t, int32_t)> traverse,
+                                          std::shared_ptr<NodeCache> cache,
+                                          int32_t alpha, int32_t beta) {
     std::shared_ptr<Node> child = std::make_shared<Node>(base);
-    child->traverse(depth - 1, -beta, -alpha, -color, false, strategy, cache);
-    int32_t child_metric = -child->getMetric();
-    if (child_metric > this->metric) {
-      this->metric = child_metric;
-      best = ChildNode(position, child);
-    }
+    traverse(child, alpha, beta);
     if (cache) {
       cache->put(child);
     }
-    this->children.push_back(ChildNode(position, child));
-    return best;
+    ChildNode childNode(position, child);
+    this->children.push_back(childNode);
+    return childNode;
   }
 
-  void Node::generateFutures(std::vector<Position> &moves, std::vector<std::future<std::shared_ptr<Node>>> &nodeFutures,
-    std::size_t depth, int32_t alpha, int32_t beta, int color, const Strategy &strategy, FixedThreadPool &pool, std::shared_ptr<NodeCache> cache) {
-    for (Position position : moves) {
-      State base(this->state);
-      base.apply(position);
+  void Node::generateFutures(std::vector<std::future<ChildNode>> &nodeFutures, std::function<void (std::shared_ptr<Node>)> traverse,
+    FixedThreadPool &pool) {
+    
+    std::vector<MoveState> children;
+    deriveSubstates(this->state, children);
+    for (const auto &childState : children) {
       nodeFutures.push_back(pool.submit([=]() {
-        std::shared_ptr<Node> child = std::make_shared<Node>(base);
-        child->traverse(depth - 1, -beta, -alpha, -color, false, strategy, cache);
-        return child;
+        std::shared_ptr<Node> child = std::make_shared<Node>(childState.second);
+        traverse(child);
+        return ChildNode(childState.first, child);
       }));
     }
-  }
-
-  std::optional<ChildNode> Node::addChild(std::future<std::shared_ptr<Node>> nodeFuture, Position position) {
-    std::optional<ChildNode> best;
-    std::shared_ptr<Node> child = nodeFuture.get();
-    int32_t child_metric = -child->getMetric();
-    if (child_metric > this->metric) {
-      this->metric = child_metric;
-      best = ChildNode(position, child);
-    }
-    this->children.push_back(ChildNode(position, child));
-    return best;
   }
 
   void Node::randomizeOptimal() {
@@ -294,14 +303,29 @@ namespace Reversi {
 
   void Node::selectOptimal(const Strategy &strategy) {
     std::function<int32_t (const State &)> score_assess = this->state.getPlayer() == Player::White ? strategy.white : strategy.black;
-    int32_t max_own_metric = score_assess(this->optimal.value().node->getState());
-    for (const auto &child : this->children) {
-      int32_t own_metric = score_assess(child.node->getState());
-      if (child.node->getMetric() == this->metric && own_metric > max_own_metric) {
-        max_own_metric = own_metric;
-        this->optimal = child;
+    if (this->optimal) {
+      int32_t max_own_metric = score_assess(this->optimal.value().node->getState());
+      for (const auto &child : this->children) {
+        int32_t own_metric = score_assess(child.node->getState());
+        if (child.node->getMetric() == this->metric && own_metric > max_own_metric) {
+          max_own_metric = own_metric;
+          this->optimal = child;
+        }
       }
     }
+  }
+
+  std::ostream &Node::dump(std::ostream &os, const Node &root, std::string separator, std::string prefix) {
+    const std::vector<ChildNode> &children = root.getChildren();
+    for (const auto &child : children) {
+      os << prefix;
+      if (child.move) {
+        os << prefix << child.move.value() << ' ';
+      }
+      os << static_cast<int>(child.node->getState().getPlayer()) * child.node->getMetric() << std::endl;
+      Node::dump(os, *child.node, separator, prefix + separator);
+    }
+    return os;
   }
 
   std::ostream &operator<<(std::ostream &os, const Node &root) {

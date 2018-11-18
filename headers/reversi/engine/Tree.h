@@ -35,6 +35,7 @@ namespace Reversi {
   class Node; // Forward referencing
 
   using Move = std::optional<Position>;
+  using MoveState = std::pair<Move, State>;
 
   struct ChildNode {
     ChildNode(Move move, std::shared_ptr<Node> child)
@@ -77,6 +78,13 @@ namespace Reversi {
     std::map<State, std::shared_ptr<Node>> cache;
   };
 
+  class ChildNodeIterator {
+   public:
+    virtual ~ChildNodeIterator() = default;
+    virtual bool hasNext() = 0;
+    virtual std::optional<ChildNode> next(int32_t, int32_t) = 0;
+  };
+
   class Node {
    public:
     Node(const State &);
@@ -91,17 +99,17 @@ namespace Reversi {
     static std::ostream &dump(std::ostream &, const Node &, std::string = "\t", std::string = "");
    protected:
     const std::vector<ChildNode> &getChildren() const;
-    int32_t traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache> = nullptr, bool = true);
-    int32_t traverse(std::size_t, int32_t, int32_t, int, bool, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache> = nullptr, bool = true);
+    int32_t traverseSequential(std::size_t, int32_t, int32_t, int, const Strategy &, std::shared_ptr<NodeCache> = nullptr);
    private:
+    int32_t traverseParallel(std::size_t, int32_t, int32_t, int, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache> = nullptr);
     int32_t directMetric(int, std::function<int32_t (const State &)>);
-    int32_t noMoves(int32_t, int32_t, int, bool, const Strategy &, std::shared_ptr<NodeCache>);
-    int32_t evaluateMetric(std::vector<Position> &, int32_t, int32_t, int, const Strategy &, std::shared_ptr<NodeCache>);
-    int32_t evaluateMetric(std::vector<Position> &, int32_t, int32_t, int, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache>);
-    std::optional<ChildNode> addChild(Position, const State &, std::size_t, int32_t, int32_t, int, const Strategy &, std::shared_ptr<NodeCache>);
-    void generateFutures(std::vector<Position> &, std::vector<std::future<std::shared_ptr<Node>>> &,
-      std::size_t, int32_t, int32_t, int, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache>);
-    std::optional<ChildNode> addChild(std::future<std::shared_ptr<Node>>, Position);
+    int32_t evaluateMetricSequential(int32_t, int32_t, int, const Strategy &, std::shared_ptr<NodeCache>);
+    int32_t evaluateMetricParallel(int32_t, int32_t, int, const Strategy &, FixedThreadPool &, std::shared_ptr<NodeCache>);
+    int32_t evaluateMetric(ChildNodeIterator &, int32_t, int32_t);
+    ChildNode getChildFromCache(Move, const State &, std::shared_ptr<NodeCache>);
+    ChildNode buildChild(Move, const State &, std::function<void (std::shared_ptr<Node>, int32_t, int32_t)>, std::shared_ptr<NodeCache>,
+      int32_t, int32_t);
+    void generateFutures(std::vector<std::future<ChildNode>> &, std::function<void (std::shared_ptr<Node>)>, FixedThreadPool &);
     void randomizeOptimal();
     void selectOptimal(const Strategy &);
 
