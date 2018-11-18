@@ -282,6 +282,7 @@ namespace Reversi::Frontend {
 
   void ReversiFrame::updateDuration(wxTimerEvent &evt) {
     if (this->session) {
+      this->Enable(!this->session->isCurrentlyProcessing());
       std::chrono::milliseconds duration = this->session->getDuration();
       auto hours = std::chrono::duration_cast<std::chrono::hours>(duration);
       duration -= hours;
