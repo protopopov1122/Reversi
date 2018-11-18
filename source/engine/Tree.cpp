@@ -208,14 +208,14 @@ namespace Reversi {
   }
 
   int32_t Node::evaluateMetricSequential(int32_t alpha, int32_t beta, int color, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
-    auto childTraversal = [&](std::shared_ptr<Node> child, int32_t alpha, int32_t beta) {
-      child->traverseSequential(this->depth - 1, -beta, -alpha, -color, strategy, cache);
+    auto childTraversal = [&](std::shared_ptr<Node> child, int32_t cAlpha, int32_t cBeta) {
+      child->traverseSequential(this->depth - 1, -cBeta, -cAlpha, -color, strategy, cache);
     };
-    ChildNodeSequentialIterator iter(this->state, [&](Move position, const State &base, int32_t alpha, int32_t beta) {
+    ChildNodeSequentialIterator iter(this->state, [&](Move position, const State &base, int32_t iAlpha, int32_t iBeta) {
       if (cache && cache->has(base, this->depth - 1)) {
         return this->getChildFromCache(position, base, cache);
       } else {
-        return this->buildChild(position, base, childTraversal, cache, alpha, beta);
+        return this->buildChild(position, base, childTraversal, cache, iAlpha, iBeta);
       }
     });
     return this->evaluateMetric(iter, alpha, beta);

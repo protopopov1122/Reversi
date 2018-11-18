@@ -36,7 +36,7 @@ namespace Reversi {
         std::chrono::time_point end_time_point = C::now();
         return std::chrono::duration_cast<T>(end_time_point - start_time_point);
       };
-    };
+    }
   };
 }
 
