@@ -107,6 +107,7 @@ namespace Reversi {
     static int32_t assessState(const State &);
    private:
     static int32_t calculateEmptyDiscsAround(const State &, Position);
+	static int32_t cornerHeuristic(const State &);
   };
 
   class DefaultGameEngine : public GameEngine {

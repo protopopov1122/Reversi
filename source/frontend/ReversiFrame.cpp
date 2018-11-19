@@ -42,15 +42,20 @@ namespace Reversi::Frontend {
     this->SetMinSize(this->GetSize());
     wxBoxSizer *frameSizer = new wxBoxSizer(wxHORIZONTAL);
     this->SetSizer(frameSizer);
-    wxPanel *panel = new wxPanel(this, wxID_ANY);
-    frameSizer->Add(panel, 1, wxALL | wxEXPAND);
+	
+	this->mainPanel = new wxPanel(this, wxID_ANY);
+	frameSizer->Add(this->mainPanel, 1, wxALL | wxEXPAND);
+	wxBoxSizer *mainSizer = new wxBoxSizer(wxHORIZONTAL);
+	this->mainPanel->SetSizer(mainSizer);
+    wxPanel *panel = new wxPanel(this->mainPanel, wxID_ANY);
+    mainSizer->Add(panel, 1, wxALL | wxEXPAND);
     wxBoxSizer *sizer = new wxBoxSizer(wxVERTICAL);
     panel->SetSizer(sizer);
 
     this->boardWindow = new ReversiBoard(panel, wxID_ANY);
     sizer->Add(this->boardWindow, 1, wxALL | wxEXPAND);
 
-    this->initSettings(frameSizer);
+    this->initSettings(mainSizer);
     this->initMenu();
     this->initMoveList();
     
@@ -128,7 +133,7 @@ namespace Reversi::Frontend {
   }
 
   void ReversiFrame::initSettings(wxSizer *frameSizer) {
-    this->settingsPanel = new wxPanel(this, wxID_ANY);
+    this->settingsPanel = new wxPanel(this->mainPanel, wxID_ANY);
     frameSizer->Add(this->settingsPanel, 0, wxALL | wxEXPAND);
     wxBoxSizer *settingsSizer = new wxBoxSizer(wxVERTICAL);
     this->settingsPanel->SetSizer(settingsSizer);
@@ -204,7 +209,9 @@ namespace Reversi::Frontend {
     this->boardWindow->update();
     this->moveList->DeleteAllItems();
     if (this->session) {
-      this->Enable(!this->session->isCurrentlyProcessing());
+	  bool enabled = !this->session->isCurrentlyProcessing();
+	  this->GetMenuBar()->EnableTop(0, enabled);
+      this->mainPanel->Enable(enabled);
       this->showMoves(this->session->getMoves());
       this->updateStatistics(this->session->getState());
     }
@@ -282,7 +289,9 @@ namespace Reversi::Frontend {
 
   void ReversiFrame::updateDuration(wxTimerEvent &evt) {
     if (this->session) {
-      this->Enable(!this->session->isCurrentlyProcessing());
+	  bool enabled = !this->session->isCurrentlyProcessing();
+	  this->GetMenuBar()->EnableTop(0, enabled);
+      this->mainPanel->Enable(enabled);
       std::chrono::milliseconds duration = this->session->getDuration();
       auto hours = std::chrono::duration_cast<std::chrono::hours>(duration);
       duration -= hours;

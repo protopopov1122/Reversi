@@ -62,6 +62,7 @@ namespace Reversi::Frontend {
     std::unique_ptr<DefaultReversiSession> session;
     FunctionEventListener<State> updateListener;
     ReversiBoard *boardWindow;
+	wxPanel *mainPanel;
     wxPanel *settingsPanel;
     wxWindow *sessionSettings;
     wxCheckBox *showLastMove;

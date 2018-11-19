@@ -132,7 +132,8 @@ namespace Reversi {
         { -3, -250, 3, 1, 1, 3, -250, -3 },
         { 500,  -3, 6, 4, 4, 6,  -3, 500 }
     };
-    const int32_t END_OF_GAME_THRESHOLD = 54;
+    const int32_t END_OF_GAME_THRESHOLD = 59;
+	const int32_t NEAR_END_OF_GAME = 54;
 
     int32_t white_discs =  state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
       if (state == CellState::White) {
@@ -150,8 +151,12 @@ namespace Reversi {
     });
     int32_t total_sum = white_discs + black_discs;
     int32_t disc_diff = white_discs - black_discs;
-    if (total_sum >= END_OF_GAME_THRESHOLD) {
-      return disc_diff;
+	
+	if (total_sum >= END_OF_GAME_THRESHOLD) {
+		return disc_diff;
+    } else if (total_sum >= NEAR_END_OF_GAME) {
+	  int32_t corner_heuristic = StateHelpers::cornerHeuristic(state);
+      return disc_diff + corner_heuristic;
     } else {
       int32_t weight_heuristic = state.getBoard().getMetric([&](int32_t sum, CellState state, Position position) {
         return sum + static_cast<int>(state) * WEIGHTS[position.getRow() - 1][position.getColumn() - 'A'];
@@ -189,5 +194,14 @@ namespace Reversi {
       empty_cells = 2;
     }
     return empty_cells * static_cast<int>(state.getBoard().getCellState(position));     
+  }
+  
+  int32_t StateHelpers::cornerHeuristic(const State &state) {
+	const int CORNER_WEIGHT = 20;
+    int32_t corners = static_cast<int>(state.getBoard().getCellState(Position('A', 1))) +
+		static_cast<int>(state.getBoard().getCellState(Position('A', 8))) +
+		static_cast<int>(state.getBoard().getCellState(Position('H', 1))) +
+		static_cast<int>(state.getBoard().getCellState(Position('H', 8)));
+	return corners * CORNER_WEIGHT;
   }
 }
