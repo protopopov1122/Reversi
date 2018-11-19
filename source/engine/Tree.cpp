@@ -30,13 +30,13 @@ namespace Reversi {
   static std::mt19937 random_generator(random_device());
 
   bool NodeCache::has(const State &state, std::size_t depth) {
-    std::shared_lock<std::shared_mutex> lock(this->cacheMutex);
+    std::lock_guard<std::shared_mutex> lock(this->cacheMutex);
     return this->cache.count(state) > 0 &&
       this->cache[state]->getDepth() >= depth;
   }
 
   std::shared_ptr<Node> NodeCache::get(const State &state) {
-    std::shared_lock<std::shared_mutex> lock(this->cacheMutex);
+    std::lock_guard<std::shared_mutex> lock(this->cacheMutex);
     if (this->cache.count(state) != 0) {
       return this->cache[state];
     } else {
@@ -45,7 +45,7 @@ namespace Reversi {
   }
 
   void NodeCache::put(std::shared_ptr<Node> node) {
-    std::scoped_lock<std::shared_mutex> lock(this->cacheMutex);
+    std::lock_guard<std::shared_mutex> lock(this->cacheMutex);
     if (node &&
       (this->cache.count(node->getState()) == 0 ||
       this->cache[node->getState()]->getDepth() < node->getDepth())) {
@@ -154,7 +154,7 @@ namespace Reversi {
   }
 
   std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, FixedThreadPool &pool, bool randomize) {
-    std::shared_ptr<NodeCache> cache = std::make_shared<NodeCache>();
+    std::shared_ptr<NodeCache> cache = ENABLE_TREE_NODE_CACHE ? std::make_shared<NodeCache>() : nullptr;
     this->traverseParallel(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, strategy, pool, cache);
     if (randomize) {
       this->randomizeOptimal();

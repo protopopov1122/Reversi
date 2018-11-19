@@ -25,6 +25,7 @@
 
 namespace Reversi {
   static constexpr bool ENABLE_LOGGING = false;
+  static constexpr bool ENABLE_TREE_NODE_CACHE = true;
   static constexpr bool DISPLAY_MOVE_METRIC = false;    // Display movement assessment metric. Currently not so useful.
 }
 
