@@ -47,6 +47,7 @@ namespace Reversi::Frontend {
     const std::vector<PlayerMoveDiff> &getMoves() const override;
     bool isClosing();
     std::chrono::milliseconds getDuration();
+    virtual void setReversedMode(bool) = 0;
     virtual wxWindow *getSettings(wxWindow *, wxWindowID) = 0;
     virtual bool isCurrentlyProcessing() = 0;
 

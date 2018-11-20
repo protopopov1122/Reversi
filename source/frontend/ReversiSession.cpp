@@ -87,6 +87,8 @@ namespace Reversi::Frontend {
       return false;
     }
 
+    void setReversedMode(bool rev) override {}
+
     wxWindow *getSettings(wxWindow *parent, wxWindowID id) override {
       wxPanel *settingsPanel = new wxPanel(parent, id);
       wxFlexGridSizer *sizer = new wxFlexGridSizer(2);
@@ -124,6 +126,10 @@ namespace Reversi::Frontend {
 
     bool isCurrentlyProcessing() override {
       return this->getState().getPlayer() != human && this->ai.isActive();
+    }
+
+    void setReversedMode(bool rev) override {
+      this->ai.setReversed(rev);
     }
 
     wxWindow *getSettings(wxWindow *parent, wxWindowID id) override {
@@ -188,6 +194,11 @@ namespace Reversi::Frontend {
           this->engine.triggerEvent();
         }
       }
+    }
+
+    void setReversedMode(bool rev) override {
+      this->aiWhite.setReversed(rev);
+      this->aiBlack.setReversed(rev);
     }
 
     bool isCurrentlyProcessing() override {

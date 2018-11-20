@@ -41,6 +41,7 @@ namespace Reversi {
     void setDifficulty(unsigned int);
     bool isActive() const;
     void setRandomized(bool);
+    void setReversed(bool);
 
     void makeMove();
     void receiveEvent(const State &) override;
@@ -54,6 +55,7 @@ namespace Reversi {
     std::atomic<bool> active;
     bool wait;
     bool randomized;
+    bool reversed;
   };
 }
 

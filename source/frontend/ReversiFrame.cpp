@@ -83,11 +83,12 @@ namespace Reversi::Frontend {
     this->moveList->DeleteAllItems();
     this->session = factory.createSession(state);
     if (this->session) {
+      this->session->setReversedMode(this->reversedMode->GetValue());
       this->session->getEngine().addEventListener(this->updateListener);
       this->boardWindow->setSession(this->session.get());
       this->sessionSettings = this->session->getSettings(this->settingsPanel, wxID_ANY);
       if (this->sessionSettings) {
-        this->settingsPanel->GetSizer()->Insert(2, this->sessionSettings, 0, wxALL | wxEXPAND);
+        this->settingsPanel->GetSizer()->Insert(3, this->sessionSettings, 0, wxALL | wxEXPAND);
         this->Layout();
       }
       this->updateStatistics(this->session->getState());
@@ -137,6 +138,11 @@ namespace Reversi::Frontend {
     frameSizer->Add(this->settingsPanel, 0, wxALL | wxEXPAND);
     wxBoxSizer *settingsSizer = new wxBoxSizer(wxVERTICAL);
     this->settingsPanel->SetSizer(settingsSizer);
+
+    this->reversedMode = new wxCheckBox(this->settingsPanel, wxID_ANY, "Reversed mode");
+    settingsSizer->Add(this->reversedMode);
+    this->reversedMode->SetValue(false);
+    this->reversedMode->Bind(wxEVT_CHECKBOX, &ReversiFrame::OnReversedMode, this);
 
     this->showLastMove = new wxCheckBox(this->settingsPanel, wxID_ANY, "Show last move");
     settingsSizer->Add(this->showLastMove);
@@ -242,6 +248,12 @@ namespace Reversi::Frontend {
 	 this->moveList->Update();
   }
 
+  void ReversiFrame::OnReversedMode(wxCommandEvent &evt) {
+    if (this->session) {
+      this->session->setReversedMode(this->reversedMode->GetValue());
+    }
+  }
+
   void ReversiFrame::updateStatistics(const State &state) {
     int32_t whiteScore = state.getBoard().getMetric([](int32_t sum, CellState state, Position pos) {
       return state == CellState::White ? sum + 1 : sum;
@@ -256,10 +268,14 @@ namespace Reversi::Frontend {
       Logger::log("Session", [&](auto &out) {
         out << "Session closed with score " << whiteScore << "x" << blackScore;
       });
-      if (whiteScore > blackScore) {
+      int32_t score_delta = whiteScore - blackScore;
+      if (this->reversedMode->GetValue()) {
+        score_delta *= -1;
+      }
+      if (score_delta > 0) {
         wxMessageBox("White won!", "", wxOK | wxICON_INFORMATION);
         this->SetStatusText("White won!", 1);
-      } else if (whiteScore == blackScore) {
+      } else if (score_delta == 0) {
         wxMessageBox("Draw", "", wxOK | wxICON_INFORMATION);
         this->SetStatusText("Draw", 1);
       } else {

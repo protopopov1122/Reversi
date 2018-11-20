@@ -54,6 +54,7 @@ namespace Reversi::Frontend {
     void OnResize(wxSizeEvent &);
     void OnMaximize(wxMaximizeEvent &);
     void OnAbout(wxCommandEvent &);
+    void OnReversedMode(wxCommandEvent &);
     
     void updateStatistics(const State &);
     void showMoves(const std::vector<PlayerMoveDiff> &);
@@ -62,11 +63,12 @@ namespace Reversi::Frontend {
     std::unique_ptr<DefaultReversiSession> session;
     FunctionEventListener<State> updateListener;
     ReversiBoard *boardWindow;
-	wxPanel *mainPanel;
+    wxPanel *mainPanel;
     wxPanel *settingsPanel;
     wxWindow *sessionSettings;
     wxCheckBox *showLastMove;
     wxCheckBox *showPossibleMoves;
+    wxCheckBox *reversedMode;
     wxListCtrl *moveList;
   };
 }
