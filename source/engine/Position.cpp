@@ -25,6 +25,9 @@
 
 namespace Reversi {
 
+	Position::Position()
+		: column(0), row(0) {}
+
 	Position::Position(char column, unsigned int row) {
 		if (column < 'A' || column > 'H') {
 			throw ReversiError("Row must be between A and H");	

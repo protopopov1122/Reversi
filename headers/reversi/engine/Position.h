@@ -29,6 +29,7 @@ namespace Reversi {
 	
 	class Position {
 	 public:
+    Position();
 		Position(char, unsigned int);
 		
 		char getColumn() const;

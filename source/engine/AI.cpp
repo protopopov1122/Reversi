@@ -22,6 +22,7 @@
 #include "reversi/engine/Engine.h"
 #include "reversi/engine/Logging.h"
 #include "reversi/engine/Time.h"
+#include "reversi/engine/Library.h"
 
 namespace Reversi {
 
@@ -59,6 +60,13 @@ namespace Reversi {
 
   void AIPlayer::setReversed(bool rev) {
     this->reversed = rev;
+    Logger::log("AI", [&](auto &out) {
+      if (rev) {
+        out << "Reversed mode enabled";
+      } else {
+        out << "Reversed mode disabled";
+      }
+    });
   }
 
   void AIPlayer::makeMove() {
@@ -81,27 +89,35 @@ namespace Reversi {
     });
     auto duration = TimeUtils::stopwatches();
     std::thread thread([this, duration, state]() {
-      std::function<int32_t (const State &)> reduce = StateHelpers::assessState;
-      if (this->reversed) {
-        reduce = [](const State &state) {
-          return -StateHelpers::assessState(state);
-        };
-      }
-      Strategy strat = {reduce, reduce};
-      Node root(state);
-      auto move = root.build(this->difficulty, strat, this->threads, this->randomized);
-      this->active = false;
-      duration();
-      auto realDuration = duration().count();
-      Logger::log("AI", [&](auto &out) {
-        std::size_t node_count = root.getSubNodeCount();
-        out << "AI finished lookup after " << realDuration << " microseconds; traversed " << node_count << " nodes";
-      });
-      if (move && move.value().move) {
-        this->engine.receiveEvent(PlayerMove(state.getPlayer(), move.value().move.value()));
+      std::optional<Position> nextMove;
+      if (ENABLE_OPENING_LIBRARY && !this->reversed && OpeningLibrary::Openings.hasMove(state)) {
+        nextMove = OpeningLibrary::Openings.getMove(state);
+        Logger::log("AI", [&](auto &out) {
+          out << "AI found move in opening library";
+        });
       } else {
-        std::vector<Position> moves;
-        state.getBoard().getMoves(moves, this->player);
+        std::function<int32_t (const State &)> reduce = StateHelpers::assessState;
+        if (this->reversed) {
+          reduce = [](const State &state) {
+            return -StateHelpers::assessState(state);
+          };
+        }
+        Strategy strat = {reduce, reduce};
+        Node root(state);
+        auto move = root.build(this->difficulty, strat, this->threads, this->randomized);
+        if (move) {
+          nextMove = move.value().move;
+        }
+        duration();
+        auto realDuration = duration().count();
+        Logger::log("AI", [&](auto &out) {
+          std::size_t node_count = root.getSubNodeCount();
+          out << "AI finished lookup after " << realDuration << " microseconds; traversed " << node_count << " nodes";
+        });
+      }
+      this->active = false;
+      if (nextMove) {
+        this->engine.receiveEvent(PlayerMove(state.getPlayer(), nextMove.value()));
       }
     });
     thread.detach();
