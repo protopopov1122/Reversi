@@ -21,13 +21,9 @@
 
 #include "reversi/engine/Library.h"
 #include "reversi/engine/Engine.h"
-#include <random>
 #include <algorithm>
 
 namespace Reversi {
-
-  static std::random_device random_device;
-  static std::mt19937 random_generator(random_device());
 
   StateBuilder::StateBuilder()
     : state(StateHelpers::getDefaultInitialState()) {}
@@ -102,13 +98,10 @@ namespace Reversi {
     return this->library.count(state) != 0;
   }
 
-  std::optional<Position> MoveLibrary::getMove(const State &state) const {
+  void MoveLibrary::getMove(const State &state, std::vector<Position> &moves) const {
     if (this->library.count(state)) {
-      const std::vector<Position> &moves = this->library.at(state);
-      std::uniform_int_distribution<> distribution(0, moves.size() - 1);
-      return moves.at(distribution(random_generator));
-    } else {
-      return std::optional<Position>();
+      const std::vector<Position> &savedMoves = this->library.at(state);
+      moves = savedMoves;
     }
   }
 }

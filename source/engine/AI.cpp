@@ -23,9 +23,12 @@
 #include "reversi/engine/Logging.h"
 #include "reversi/engine/Time.h"
 #include "reversi/engine/Library.h"
+#include <random>
 
 namespace Reversi {
 
+  static std::random_device random_device;
+  static std::mt19937 random_generator(random_device());
   static const std::size_t THREAD_POOL_CAPACITY = std::thread::hardware_concurrency() > 0 ? std::thread::hardware_concurrency() : 1;
 
   AIPlayer::AIPlayer(Player player, unsigned int difficulty, GameEngine &engine, bool wait)
@@ -91,11 +94,17 @@ namespace Reversi {
     std::thread thread([this, duration, state]() {
       std::optional<Position> nextMove;
       if (ENABLE_OPENING_LIBRARY && !this->reversed && OpeningLibrary::Openings.hasMove(state)) {
-        nextMove = OpeningLibrary::Openings.getMove(state);
-        Logger::log("AI", [&](auto &out) {
-          out << "AI found move in opening library";
-        });
-      } else {
+        std::vector<Position> moves;
+        OpeningLibrary::Openings.getMove(state, moves);
+        if (!moves.empty()) {
+          std::uniform_int_distribution<> distribution(0, moves.size() - 1);
+          nextMove = moves.at(distribution(random_generator));
+          Logger::log("AI", [&](auto &out) {
+            out << "AI found move in opening library";
+          });
+        }
+      }
+      if (!nextMove.has_value()) {
         std::function<int32_t (const State &)> reduce = StateHelpers::assessState;
         if (this->reversed) {
           reduce = [](const State &state) {

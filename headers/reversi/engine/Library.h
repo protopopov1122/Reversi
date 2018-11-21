@@ -24,7 +24,6 @@
 
 #include "reversi/engine/State.h"
 #include <map>
-#include <optional>
 #include <vector>
 #include <initializer_list>
 
@@ -46,7 +45,7 @@ namespace Reversi {
   class MoveLibrary {
    public:
     bool hasMove(const State &) const;
-    std::optional<Position> getMove(const State &) const;
+    void getMove(const State &, std::vector<Position> &) const;
    protected:
     void addMoves(const State &, std::initializer_list<Position>, bool);
     void addMove(const State &, Position);
