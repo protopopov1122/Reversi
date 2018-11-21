@@ -113,14 +113,15 @@ namespace Reversi {
         }
         Strategy strat = {reduce, reduce};
         Node root(state);
-        auto move = root.build(this->difficulty, strat, this->threads, this->randomized);
+        std::shared_ptr<NodeCache> cache = std::make_shared<NodeCache>();
+        auto move = root.build(this->difficulty, strat, this->threads, this->randomized, cache);
         if (move) {
           nextMove = move.value().move;
         }
         duration();
         auto realDuration = duration().count();
         Logger::log("AI", [&](auto &out) {
-          std::size_t node_count = root.getSubNodeCount();
+          std::size_t node_count = cache->size();
           out << "AI finished lookup after " << realDuration << " microseconds; traversed " << node_count << " nodes";
         });
       }

@@ -41,7 +41,7 @@ namespace Reversi {
     return *this;
   }
 
-  void MoveLibrary::addMoves(const State &state, std::initializer_list<Position> chain, bool mirroring) {
+  void MoveLibrary::addMoves(const State &state, std::vector<Position> chain, bool mirroring) {
     State base(state);
     State mirror(state);
     State diagonalMirror(state);

@@ -73,6 +73,7 @@ namespace Reversi {
      bool has(const State &, std::size_t);
      std::shared_ptr<Node> get(const State &);
      void put(std::shared_ptr<Node>);
+     std::size_t size() const;
    private:
     std::shared_mutex cacheMutex;
     std::map<State, std::shared_ptr<Node>> cache;
@@ -88,12 +89,11 @@ namespace Reversi {
   class Node {
    public:
     Node(const State &);
-    std::optional<ChildNode> build(std::size_t, const Strategy &, FixedThreadPool &, bool = false);
+    std::optional<ChildNode> build(std::size_t, const Strategy &, FixedThreadPool &, bool = false, std::shared_ptr<NodeCache> = nullptr);
     int32_t getMetric() const;
     std::size_t getDepth() const;
     const State &getState() const;
     std::optional<ChildNode> getOptimalChild() const;
-    std::size_t getSubNodeCount() const;
 
     friend std::ostream &operator<<(std::ostream &, const Node &);
     static std::ostream &dump(std::ostream &, const Node &, std::string = "\t", std::string = "");

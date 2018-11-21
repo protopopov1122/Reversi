@@ -53,6 +53,9 @@ namespace Reversi {
     }
   }
 
+  std::size_t NodeCache::size() const {
+    return this->cache.size();
+  }
 
 
   void deriveSubstates(const State &state, std::vector<MoveState> &children) {
@@ -145,16 +148,13 @@ namespace Reversi {
     return this->optimal;
   }
 
-  std::size_t Node::getSubNodeCount() const {
-    std::size_t count = 0;
-    for (const auto &child : this->children) {
-      count += 1 + child.node->getSubNodeCount();
+  std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, FixedThreadPool &pool, bool randomize,
+    std::shared_ptr<NodeCache> cache) {
+    if (cache == nullptr && ENABLE_TREE_NODE_CACHE) {
+      cache = std::make_shared<NodeCache>();
+    } else if constexpr (!ENABLE_TREE_NODE_CACHE) {
+      cache = nullptr;
     }
-    return count;
-  }
-
-  std::optional<ChildNode> Node::build(std::size_t depth, const Strategy &strategy, FixedThreadPool &pool, bool randomize) {
-    std::shared_ptr<NodeCache> cache = ENABLE_TREE_NODE_CACHE ? std::make_shared<NodeCache>() : nullptr;
     this->traverseParallel(depth, INT16_MIN, INT16_MAX, this->state.getPlayer() == Player::White ? 1 : -1, strategy, pool, cache);
     if (randomize) {
       this->randomizeOptimal();
@@ -196,26 +196,26 @@ namespace Reversi {
 
   int32_t Node::evaluateMetricParallel(int32_t alpha, int32_t beta, int color,
                                const Strategy &strategy, FixedThreadPool &pool, std::shared_ptr<NodeCache> cache) {
-    std::function<void (std::shared_ptr<Node>)> childTraversal = [&](std::shared_ptr<Node> child) {
+    std::function<void (std::shared_ptr<Node>)> childTraversal = [this, alpha, beta, color, strategy, cache](std::shared_ptr<Node> child) {
       child->traverseSequential(this->depth - 1, -beta, -alpha, -color, strategy, cache);
     };
     std::vector<std::future<ChildNode>> nodeFutures;
     this->generateFutures(nodeFutures, childTraversal, pool);
-    ChildNodeParallelIterator iter(nodeFutures, [&](ChildNode &node) {
+    ChildNodeParallelIterator iter(nodeFutures, [this](ChildNode &node) {
       this->children.push_back(node);
     });
     return this->evaluateMetric(iter, alpha, beta);
   }
 
   int32_t Node::evaluateMetricSequential(int32_t alpha, int32_t beta, int color, const Strategy &strategy, std::shared_ptr<NodeCache> cache) {
-    auto childTraversal = [&](std::shared_ptr<Node> child, int32_t cAlpha, int32_t cBeta) {
-      child->traverseSequential(this->depth - 1, -cBeta, -cAlpha, -color, strategy, cache);
+    auto childTraversal = [this, color, strategy, cache](std::shared_ptr<Node> child, int32_t alpha, int32_t beta) {
+      child->traverseSequential(this->depth - 1, -beta, -alpha, -color, strategy, cache);
     };
-    ChildNodeSequentialIterator iter(this->state, [&](Move position, const State &base, int32_t iAlpha, int32_t iBeta) {
+    ChildNodeSequentialIterator iter(this->state, [this, cache, childTraversal](Move position, const State &base, int32_t alpha, int32_t beta) {
       if (cache && cache->has(base, this->depth - 1)) {
         return this->getChildFromCache(position, base, cache);
       } else {
-        return this->buildChild(position, base, childTraversal, cache, iAlpha, iBeta);
+        return this->buildChild(position, base, childTraversal, cache, alpha, beta);
       }
     });
     return this->evaluateMetric(iter, alpha, beta);
@@ -276,7 +276,7 @@ namespace Reversi {
     std::vector<MoveState> children;
     deriveSubstates(this->state, children);
     for (const auto &childState : children) {
-      nodeFutures.push_back(pool.submit([=]() {
+      nodeFutures.push_back(pool.submit([childState, traverse]() {
         std::shared_ptr<Node> child = std::make_shared<Node>(childState.second);
         traverse(child);
         return ChildNode(childState.first, child);

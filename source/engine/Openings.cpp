@@ -21,15 +21,38 @@
 
 #include "reversi/engine/Library.h"
 #include "reversi/engine/Engine.h"
+#include <regex>
+#include <iterator>
+#include <iostream>
 
 namespace Reversi {
 
   const OpeningLibrary OpeningLibrary::Openings;
 
   OpeningLibrary::OpeningLibrary() {
-    State initialState(StateHelpers::getDefaultInitialState());
-    this->addMoves(initialState, { Position('C', 4), Position('C', 3), Position('D', 3), Position('C', 5), Position('B', 4) }, true);
-    this->addMoves(initialState, { Position('C', 4), Position('C', 5) }, true);
-    this->addMoves(initialState, { Position('C', 4), Position('E', 3), Position('F', 4), Position('C', 5) }, true);
+    this->parseMoves("C4c3D3c5B4");
+    this->parseMoves("C4c5");
+    this->parseMoves("C4e3F4c5");
+  }
+
+  void OpeningLibrary::parseMoves(const std::string &chain) {
+    std::vector<Position> moves;
+    std::regex move_regex("[a-hA-H][1-8]");
+    auto begin = std::sregex_iterator(chain.begin(), chain.end(), move_regex);
+    auto end = std::sregex_iterator();
+    for (auto it = begin; it != end; ++it) {
+      std::string match = it->str();
+      char column = match.at(0);
+      if (column >= 'a' && column <= 'h') {
+        column = 'A' + (column - 'a');
+      }
+      unsigned int row = match.at(1) - '0';
+      if (Position::isPossible(column, row)) {
+        moves.push_back(Position(column, row));
+      } else {
+        break;
+      }
+    }
+    this->addMoves(StateHelpers::getDefaultInitialState(), moves, true);
   }
 }

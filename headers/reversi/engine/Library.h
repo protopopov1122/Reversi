@@ -47,7 +47,7 @@ namespace Reversi {
     bool hasMove(const State &) const;
     void getMove(const State &, std::vector<Position> &) const;
    protected:
-    void addMoves(const State &, std::initializer_list<Position>, bool);
+    void addMoves(const State &, std::vector<Position>, bool);
     void addMove(const State &, Position);
    private:
     std::map<State, std::vector<Position>> library;
@@ -57,6 +57,8 @@ namespace Reversi {
    public:
     OpeningLibrary();
     static const OpeningLibrary Openings;
+   private:
+    void parseMoves(const std::string &);
   };
 }
 
