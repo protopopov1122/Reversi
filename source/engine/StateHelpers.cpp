@@ -60,7 +60,7 @@ namespace Reversi {
         { 500,  -3, 6, 4, 4, 6,  -3, 500 }
     };
     const int32_t END_OF_GAME_THRESHOLD = 59;
-	const int32_t NEAR_END_OF_GAME = 54;
+	  const int32_t NEAR_END_OF_GAME = 54;
 
     int32_t white_discs =  state.getBoard().getMetric([](int32_t sum, CellState state, Position position) {
       if (state == CellState::White) {
@@ -78,11 +78,15 @@ namespace Reversi {
     });
     int32_t total_sum = white_discs + black_discs;
     int32_t disc_diff = white_discs - black_discs;
+
+    if (StateHelpers::isGameFinished(state) && white_discs != black_discs) {
+      return white_discs > black_discs ? INT16_MAX : INT16_MIN;
+    }
 	
-	if (total_sum >= END_OF_GAME_THRESHOLD) {
-		return disc_diff;
+	  if (total_sum >= END_OF_GAME_THRESHOLD) {
+		  return disc_diff;
     } else if (total_sum >= NEAR_END_OF_GAME) {
-	  int32_t corner_heuristic = StateHelpers::cornerHeuristic(state);
+	    int32_t corner_heuristic = StateHelpers::cornerHeuristic(state);
       return disc_diff + corner_heuristic;
     } else {
       int32_t weight_heuristic = state.getBoard().getMetric([&](int32_t sum, CellState state, Position position) {
