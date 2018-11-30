@@ -33,7 +33,7 @@ namespace Reversi {
 
   AIPlayer::AIPlayer(Player player, unsigned int difficulty, GameEngine &engine, bool wait)
     : player(player), difficulty(difficulty), threads(THREAD_POOL_CAPACITY), engine(engine),
-      active(false), wait(wait), randomized(false), reversed(true) {
+      active(false), wait(wait), randomized(true), reversed(false) {
     this->engine.addEventListener(*this);
   }
 
