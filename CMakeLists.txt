@@ -14,7 +14,7 @@ endif()
 # Fix linker options on MinGW
 if (MINGW)
 	if (MINGW_STATIC_LINKAGE)
-		set(LINKAGE_OPTS "-static-libgcc -static-libstdc++ -Wl,-Bstatic,--whole-archive -Wl,--exclude-symbols,_Unwind_Resume -lwinpthread -Wl,-Bdynamic,--no-whole-archive")
+		set(LINKAGE_OPTS "-static-libgcc -static-libstdc++ -Wl,-Bstatic,--whole-archive -Wl,-luuid -Wl,--exclude-symbols,_Unwind_Resume -lwinpthread -Wl,-Bdynamic,--no-whole-archive")
 	elseif (MINGW_SHARED_LINKAGE)
 		set(LINKAGE_OPTS "-shared-libgcc")
 	else ()
