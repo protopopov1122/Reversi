@@ -24,6 +24,7 @@
 #include <iostream>
 #include <iomanip>
 #include <random>
+#include <string>
 
 namespace Reversi {
   static std::random_device random_device;

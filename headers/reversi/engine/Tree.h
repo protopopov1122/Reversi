@@ -38,6 +38,8 @@ namespace Reversi {
   using MoveState = std::pair<Move, State>;
 
   struct ChildNode {
+	ChildNode()
+	  : move(), node() {}
     ChildNode(Move move, std::shared_ptr<Node> child)
       : move(move), node(child) {}
     ChildNode(Position move, std::shared_ptr<Node> child)
